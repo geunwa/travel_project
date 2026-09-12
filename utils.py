@@ -1,199 +1,349 @@
-import os
-from pathlib import Path
-from urllib.parse import unquote
-
+import json
+import re
 import requests
-from dotenv import load_dotenv
+from datetime import datetime
+from pathlib import Path
+
+from google import genai
 
 
-AREA_CODE_MAP = {
-    "서울": 1,
-    "서울특별시": 1,
-    "인천": 2,
-    "인천광역시": 2,
-    "대전": 3,
-    "대전광역시": 3,
-    "대구": 4,
-    "대구광역시": 4,
-    "광주": 5,
-    "광주광역시": 5,
-    "부산": 6,
-    "부산광역시": 6,
-    "울산": 7,
-    "울산광역시": 7,
-    "세종": 8,
-    "세종특별자치시": 8,
-    "경기": 31,
-    "경기도": 31,
-    "강원": 32,
-    "강원도": 32,
-    "충북": 33,
-    "충청북도": 33,
-    "충남": 34,
-    "충청남도": 34,
-    "경북": 35,
-    "경상북도": 35,
-    "경남": 36,
-    "경상남도": 36,
-    "전북": 37,
-    "전라북도": 37,
-    "전북특별자치도": 37,
-    "전남": 38,
-    "전라남도": 38,
-    "제주": 39,
-    "제주도": 39,
-    "제주특별자치도": 39,
-}
+# =============================================================
+# 공통 상수
+# =============================================================
 
-CONTENT_TYPE_MAP = {
-    "1": ("관광지", 12),
-    "2": ("문화시설", 14),
-    "3": ("음식점", 39),
-}
-
-NUM_OF_ROWS = 10
+RESULTS_DIR   = Path("results")
+REQUIRED_KEYS = {"recommended_city", "weather", "events", "reason"}
+GEMINI_MODEL  = "gemini-3.6-flash"
 
 
-def load_api_key():
-    """현재 파일 기준 같은 폴더의 .env에서 API_KEY를 읽어온다."""
-    env_path = Path(__file__).resolve().parent / ".env"
-    load_dotenv(env_path)
+# =============================================================
+# 내부 유틸
+# =============================================================
 
-    api_key = os.getenv("API_KEY")
-    if not api_key:
-        return None
-
-    return unquote(api_key)
+def _ensure_results_dir() -> Path:
+    """results/ 폴더가 없으면 생성 후 반환"""
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    return RESULTS_DIR
 
 
-def print_region_guide():
-    print("\n조회 가능한 지역 예시:")
-    print("서울, 부산, 대구, 인천, 광주, 대전, 울산, 세종")
-    print("경기, 강원, 충북, 충남, 경북, 경남, 전북, 전남, 제주")
+def _extract_json_from_text(text: str) -> dict:
+    """LLM 응답 텍스트에서 JSON 블록만 추출 후 파싱."""
+    code_block = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+    if code_block:
+        candidate = code_block.group(1).strip()
+    else:
+        brace_match = re.search(r"\{[\s\S]*\}", text)
+        candidate = brace_match.group(0).strip() if brace_match else text.strip()
+    return json.loads(candidate)
 
 
-def get_area_code_from_user():
-    """지역명을 입력받아 (지역명, 지역코드)를 반환한다."""
-    while True:
-        print_region_guide()
-        region_name = input("지역명을 입력하세요: ").strip()
-
-        if region_name in AREA_CODE_MAP:
-            return region_name, AREA_CODE_MAP[region_name]
-
-        print("잘못된 지역명입니다. 다시 입력해주세요.")
+def _validate_recommendation(data: dict) -> bool:
+    """필수 키 4개 모두 존재하면 True"""
+    return REQUIRED_KEYS.issubset(data.keys())
 
 
-def print_content_type_guide():
-    print("\n조회할 종류를 선택하세요:")
-    print("1. 관광지")
-    print("2. 문화시설")
-    print("3. 음식점")
+def _build_fallback_report(
+    date_text: str,
+    city: str,
+    reason: str,
+    weather: str,
+    events_text: str,
+    restaurant_lines: str,
+    errors_text: str,
+) -> str:
+    """LLM 리포트 생성 실패 시 최소 Markdown 직접 조립."""
+    return (
+        f"# {date_text} 국내 여행 추천 리포트\n"
+        f"> LLM 리포트 생성에 실패하여 기본 형식으로 출력합니다.\n\n"
+        f"## 추천 지역\n{city or '정보 없음'}\n\n"
+        f"## 추천 이유\n{reason or '정보 없음'}\n\n"
+        f"## 날씨 요약\n{weather or '정보 없음'}\n\n"
+        f"## 행사/축제\n{events_text or '정보 없음'}\n\n"
+        f"## 맛집 추천\n{restaurant_lines or '데이터 없음'}\n\n"
+        f"## 1일 일정 제안\n정보를 불러오지 못했습니다.\n\n"
+        f"## 오류 요약\n{errors_text or '없음'}\n"
+    )
 
 
-def get_content_type_from_user():
-    """종류 번호를 입력받아 (종류명, contentTypeId)를 반환한다."""
-    while True:
-        print_content_type_guide()
-        choice = input("번호를 입력하세요: ").strip()
+# =============================================================
+# [1] LLM 1차 추천 생성
+# =============================================================
 
-        if choice in CONTENT_TYPE_MAP:
-            return CONTENT_TYPE_MAP[choice]
+def generate_city_recommendation(
+    date_text: str,
+    api_key: str,
+    errors: list,
+) -> dict:
+    client = genai.Client(api_key=api_key)
 
-        print("잘못된 번호입니다. 1, 2, 3 중에서 다시 입력해주세요.")
+    def _build_prompt(strict: bool = False) -> str:
+        base = f"""당신은 국내 여행 전문가입니다.
+여행 날짜: {date_text}
 
+아래 JSON 형식으로만 답하세요. 설명 문장, 마크다운 없이 JSON만 출력하세요.
 
-def get_page_number_from_user():
-    """페이지 번호를 입력받아 정수로 반환한다."""
-    while True:
-        page_input = input("\n페이지 번호를 입력하세요(1 이상): ").strip()
+{{
+  "recommended_city": "추천 도시명 (예: 제주, 강릉, 경주)",
+  "weather": "해당 시기 일반적인 날씨 요약 (1~2문장)",
+  "events": ["행사/축제 후보 1개", "행사/축제 후보 2개"],
+  "reason": "추천 근거 (2~4문장)"
+}}"""
+        if strict:
+            base = "반드시 JSON만 출력하세요. 앞뒤 설명 없이 { } 블록만.\n\n" + base
+        return base
 
-        if not page_input.isdigit():
-            print("숫자만 입력해주세요.")
-            continue
+    # ── 1차 시도 ──────────────────────────────────────────────
+    raw_text = ""
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=_build_prompt(strict=False),
+        )
+        raw_text = response.text
+        data = _extract_json_from_text(raw_text)
+        if _validate_recommendation(data):
+            return data
+        raise ValueError(f"필수 키 누락: {REQUIRED_KEYS - data.keys()}")
 
-        page_no = int(page_input)
+    except Exception as e:
+        errors.append({
+            "step"   : "llm_recommendation_attempt1",
+            "type"   : type(e).__name__,
+            "message": str(e),
+            "raw"    : raw_text[:300] if raw_text else "",
+        })
 
-        if page_no < 1:
-            print("페이지 번호는 1 이상이어야 합니다.")
-            continue
+    # ── 재시도 1회 (strict 프롬프트) ──────────────────────────
+    raw_text = ""
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=_build_prompt(strict=True),
+        )
+        raw_text = response.text
+        data = _extract_json_from_text(raw_text)
+        if _validate_recommendation(data):
+            return data
+        raise ValueError(f"재시도 후에도 필수 키 누락: {REQUIRED_KEYS - data.keys()}")
 
-        return page_no
+    except Exception as e:
+        errors.append({
+            "step"   : "llm_recommendation_attempt2",
+            "type"   : type(e).__name__,
+            "message": str(e),
+            "raw"    : raw_text[:300] if raw_text else "",
+        })
 
-
-def request_places(api_key, area_code, content_type_id, page_no):
-    """관광정보 API를 호출한다."""
-    url = "https://apis.data.go.kr/B551011/KorService2/areaBasedList2"
-
-    params = {
-        "serviceKey": api_key,
-        "numOfRows": NUM_OF_ROWS,
-        "pageNo": page_no,
-        "MobileOS": "ETC",
-        "MobileApp": "TravelProject",
-        "_type": "json",
-        "areaCode": area_code,
-        "contentTypeId": content_type_id,
+    # ── 최종 실패 → 기본값 반환 ───────────────────────────────
+    return {
+        "recommended_city": "",
+        "weather"         : "정보 없음",
+        "events"          : [],
+        "reason"          : "LLM 추천 생성에 실패했습니다.",
     }
 
-    return requests.get(url, params=params, timeout=10)
 
+# =============================================================
+# [2] Kakao 맛집 검색
+# =============================================================
 
-def parse_items(response_json):
-    """응답 JSON에서 item 목록을 추출한다."""
-    body = response_json.get("response", {}).get("body", {})
-    items = body.get("items", {}).get("item", [])
+def search_restaurants(
+    city: str,
+    api_key: str,
+    errors: list,
+    size: int = 5,
+) -> list:
+    if not city:
+        errors.append({
+            "step"   : "place_search",
+            "type"   : "EMPTY_CITY",
+            "message": "recommended_city가 비어 있어 맛집 검색을 건너뜁니다.",
+        })
+        return []
 
-    if isinstance(items, dict):
-        items = [items]
-
-    return items
-
-
-def get_total_count(response_json):
-    """응답 JSON에서 전체 데이터 개수를 추출한다."""
-    body = response_json.get("response", {}).get("body", {})
-    total_count = body.get("totalCount", 0)
+    url     = "https://dapi.kakao.com/v2/local/search/keyword.json"
+    headers = {"Authorization": f"KakaoAK {api_key}"}
+    query   = f"{city} 맛집"
+    params  = {"query": query, "size": size, "sort": "accuracy"}
 
     try:
-        return int(total_count)
-    except (TypeError, ValueError):
-        return 0
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+
+        if response.status_code in (401, 403):
+            errors.append({
+                "step"   : "place_search",
+                "type"   : "AUTH_ERROR",
+                "message": (
+                    f"HTTP {response.status_code} - "
+                    "키 설정을 확인하세요. "
+                    "Kakao Developers > 앱 > 플랫폼/키 설정 확인"
+                ),
+            })
+            print(f"  - 오류: 인증 실패({response.status_code}). 키 설정을 확인하세요.")
+            print("  - 맛집 섹션은 '데이터 없음'으로 처리하고 계속 진행합니다.")
+            return []
+
+        response.raise_for_status()
+        documents = response.json().get("documents", [])
+
+        if not documents:
+            errors.append({
+                "step"   : "place_search",
+                "type"   : "EMPTY_RESULT",
+                "message": f"0 results for query={query}",
+            })
+            print(f"  - 검색 결과 0건 (query={query})")
+            return []
+
+        results = []
+        for doc in documents:
+            address = doc.get("road_address_name") or doc.get("address_name", "")
+            results.append({
+                "name"    : doc.get("place_name", ""),
+                "address" : address,
+                "category": doc.get("category_name", ""),
+                "url"     : doc.get("place_url", ""),
+                "x"       : doc.get("x", ""),
+                "y"       : doc.get("y", ""),
+            })
+        return results
+
+    except requests.exceptions.Timeout:
+        errors.append({
+            "step"   : "place_search",
+            "type"   : "TIMEOUT",
+            "message": f"요청 시간 초과 (query={query})",
+        })
+        print("  - 오류: 맛집 검색 시간 초과. '데이터 없음'으로 계속 진행합니다.")
+        return []
+
+    except requests.exceptions.RequestException as e:
+        errors.append({
+            "step"   : "place_search",
+            "type"   : "NETWORK_ERROR",
+            "message": str(e),
+        })
+        print(f"  - 오류: 네트워크 오류({e}). '데이터 없음'으로 계속 진행합니다.")
+        return []
+
+    except Exception as e:
+        errors.append({
+            "step"   : "place_search",
+            "type"   : type(e).__name__,
+            "message": str(e),
+        })
+        return []
+
+# =============================================================
+# [3] LLM 최종 리포트 생성
+# =============================================================
+
+def generate_final_report(
+    date_text: str,
+    recommendation: dict,
+    restaurants: list,
+    errors: list,
+    api_key: str,
+) -> str:
+    city    = recommendation.get("recommended_city", "정보 없음")
+    weather = recommendation.get("weather", "정보 없음")
+    events  = recommendation.get("events", [])
+    reason  = recommendation.get("reason", "정보 없음")
+
+    restaurant_lines = (
+        "\n".join(
+            f"- {r['name']} | {r['address']} | {r['category']} | {r['url']}"
+            for r in restaurants
+        )
+        if restaurants
+        else "데이터 없음 (장소 검색 결과 0건)"
+    )
+
+    events_text = (
+        "\n".join(f"- {e}" for e in events)
+        if events
+        else "정보 없음"
+    )
+
+    errors_text = (
+        "\n".join(
+            f"- [{e.get('step', '')}] {e.get('type', '')}: {e.get('message', '')}"
+            for e in errors
+        )
+        if errors
+        else "없음"
+    )
+
+    prompt = (
+        f"당신은 국내 여행 전문 작가입니다.\n"
+        f"아래 정보를 바탕으로 여행 리포트를 Markdown 형식으로 작성하세요.\n\n"
+        f"[여행 날짜] {date_text}\n"
+        f"[추천 도시] {city}\n"
+        f"[추천 이유] {reason}\n"
+        f"[날씨] {weather}\n"
+        f"[행사/축제]\n{events_text}\n"
+        f"[맛집 목록]\n{restaurant_lines}\n\n"
+        f"[작성 규칙]\n"
+        f"1. 아래 섹션 헤더를 반드시 포함하세요 (순서대로):\n"
+        f"   - 추천 지역\n"
+        f"   - 추천 이유\n"
+        f"   - 날씨 요약\n"
+        f"   - 행사/축제\n"
+        f"   - 맛집 추천\n"
+        f"   - 1일 일정 제안\n"
+        f"   - 오류 요약(errors)\n"
+        f"2. 불필요한 미사여구를 제외하고 가독성 좋게 작성하세요.\n"
+    )
+
+    try:
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+        )
+        return response.text
+    except Exception as e:
+        errors.append({
+            "step": "generate_final_report",
+            "type": type(e).__name__,
+            "message": str(e),
+        })
+        return _build_fallback_report(
+            date_text, city, reason, weather, events_text, restaurant_lines, errors_text
+        )
+
+# =============================================================
+# [4] 결과 저장 및 캐시 관리
+# =============================================================
+
+def save_results(date_text: str, recommendation: dict, restaurants: list, report: str, errors: list) -> dict:
+    """JSON 원본 데이터와 Markdown 리포트를 results/ 폴더에 저장합니다."""
+    out_dir = _ensure_results_dir()
+    json_path = out_dir / f"{date_text}.json"
+    md_path = out_dir / f"{date_text}.md"
+
+    data = {
+        "recommendation": recommendation,
+        "restaurants": restaurants,
+        "errors": errors
+    }
+
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write(report)
+
+    return {"json_path": str(json_path), "md_path": str(md_path)}
 
 
-def print_places(region_name, content_name, items, total_count, page_no):
-    """조회된 결과를 보기 좋게 출력한다."""
-    print(f"\n[{region_name}] {content_name} 조회 결과")
-    print(f"전체 개수: {total_count}")
-    print(f"현재 페이지: {page_no}")
-    print(f"현재 출력 개수: {len(items)}")
-
-    if total_count > 0:
-        start_num = (page_no - 1) * NUM_OF_ROWS + 1
-        end_num = min(page_no * NUM_OF_ROWS, total_count)
-        print(f"현재 범위: {start_num} ~ {end_num}")
-
-    if not items:
-        print("조회된 데이터가 없습니다.")
-        print("페이지 번호가 너무 큰지 확인해주세요.")
-        return
-
-    for idx, item in enumerate(items, start=1):
-        title = item.get("title", "제목 없음")
-        addr1 = item.get("addr1", "")
-        addr2 = item.get("addr2", "")
-        tel = item.get("tel", "")
-        mapx = item.get("mapx", "없음")
-        mapy = item.get("mapy", "없음")
-
-        full_address = f"{addr1} {addr2}".strip()
-        if not full_address:
-            full_address = "주소 없음"
-
-        if not tel:
-            tel = "전화번호 없음"
-
-        print(f"\n{idx}. {title}")
-        print(f"   주소: {full_address}")
-        print(f"   전화: {tel}")
-        print(f"   좌표: ({mapy}, {mapx})")
+def load_cached_raw(date_text: str):
+    """기존에 검색한 동일한 날짜의 JSON 데이터가 있으면 불러옵니다."""
+    json_path = RESULTS_DIR / f"{date_text}.json"
+    if not json_path.exists():
+        return None
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None

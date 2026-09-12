@@ -1,65 +1,150 @@
+import os
+import sys
+import argparse
+from datetime import datetime
+
+from dotenv import load_dotenv
+
 from utils import (
-    load_api_key,
-    get_area_code_from_user,
-    get_content_type_from_user,
-    get_page_number_from_user,
-    request_places,
-    parse_items,
-    get_total_count,
-    print_places,
+    generate_city_recommendation,
+    search_restaurants,
+    generate_final_report,
+    save_results,
+    load_cached_raw,
 )
-import requests
+
+
+def parse_args():
+    """CLI 인자 파싱: --date 필수"""
+    parser = argparse.ArgumentParser(
+        prog="main.py",
+        description="Gemini + Kakao 국내 여행 추천 프로그램",
+    )
+    parser.add_argument(
+        "--date",
+        required=True,
+        help='여행 날짜 (형식: YYYY-MM-DD, 예: --date "2025-03-15")',
+    )
+    return parser.parse_args()
+
+
+def validate_date(date_text: str) -> str:
+    """
+    YYYY-MM-DD 형식 검증.
+    실패 시 사용법 출력 후 종료.
+    """
+    try:
+        datetime.strptime(date_text, "%Y-%m-%d")
+        return date_text
+    except ValueError:
+        print("[오류] 날짜 형식이 올바르지 않습니다.")
+        print('사용법: python main.py --date "YYYY-MM-DD"')
+        print('예시:   python main.py --date "2025-03-15"')
+        sys.exit(1)
+
+
+def load_keys():
+    """
+    .env에서 API 키 로드.
+    미설정 시 즉시 종료 + 설정 방법 안내.
+    """
+    load_dotenv()
+
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    kakao_key  = os.getenv("KAKAO_REST_API_KEY")
+
+    missing = []
+    if not gemini_key:
+        missing.append("GEMINI_API_KEY")
+    if not kakao_key:
+        missing.append("KAKAO_REST_API_KEY")
+
+    if missing:
+        print(f"[오류] 다음 API 키가 설정되지 않았습니다: {', '.join(missing)}")
+        print("\n[설정 방법]")
+        print("1) 프로젝트 폴더에 .env 파일을 만들고 아래처럼 작성하세요.")
+        print("   GEMINI_API_KEY=발급받은_키")
+        print("   KAKAO_REST_API_KEY=발급받은_키")
+        print("\n2) 또는 환경변수로 설정하세요.")
+        print('   (macOS/Linux) export GEMINI_API_KEY="YOUR_KEY"')
+        print('   (Windows PS)  $env:GEMINI_API_KEY="YOUR_KEY"')
+        sys.exit(1)
+
+    return gemini_key, kakao_key
 
 
 def main():
-    api_key = load_api_key()
+    args      = parse_args()
+    date_text = validate_date(args.date)
+    gemini_key, kakao_key = load_keys()
 
-    if not api_key:
-        print("API 키를 읽지 못했습니다.")
-        print(".env 파일에 API_KEY가 있는지 확인해주세요.")
-        return
+    # 실행 중 발생하는 오류를 누적 (JSON/리포트에 기록)
+    errors = []
 
-    region_name, area_code = get_area_code_from_user()
-    content_name, content_type_id = get_content_type_from_user()
-    page_no = get_page_number_from_user()
+    # ── 캐싱(보너스) ──────────────────────────────────────────
+    # 같은 날짜 원본 JSON이 있으면 API 호출을 건너뜁니다.
+    cached = load_cached_raw(date_text)
+    if cached is not None:
+        print(f"[캐시] {date_text} 원본 데이터가 존재하여 재사용합니다.")
+        recommendation = cached.get("recommendation", {})
+        restaurants    = cached.get("restaurants", [])
+        # [수정] = 대입 대신 extend() 사용 → 이후 단계 오류도 누적 가능
+        errors.extend(cached.get("errors", []))
 
-    try:
-        response = request_places(api_key, area_code, content_type_id, page_no)
+        city = recommendation.get("recommended_city", "")
+        print(f"[1/3] (캐시) 추천 도시: {city}")
+        print(f"[2/3] (캐시) 맛집 {len(restaurants)}곳 로드 완료")
 
-        print("\n상태 코드:", response.status_code)
+    else:
+        # ── [1/3] LLM 1차 추천 ───────────────────────────────
+        print("[1/3] 1차 추천 생성 중(LLM)...")
+        recommendation = generate_city_recommendation(
+            date_text=date_text,
+            api_key=gemini_key,
+            errors=errors,
+        )
+        city = recommendation.get("recommended_city", "")
+        print(f'  - recommended_city: "{city}"')
 
-        if response.status_code != 200:
-            print("요청에 실패했습니다.")
-            print(response.text)
-            return
+        # ── [2/3] Kakao 맛집 검색 ────────────────────────────
+        print("[2/3] 맛집 검색 중(지도/장소 API)...")
+        restaurants = search_restaurants(
+            city=city,
+            api_key=kakao_key,
+            errors=errors,
+            size=5,
+        )
+        if restaurants:
+            print(f"  - 맛집 {len(restaurants)}곳 검색 완료")
+        else:
+            print("  - 검색 결과 0건 → '데이터 없음'으로 다음 단계 진행")
 
-        data = response.json()
+    # ── [3/3] LLM 최종 리포트 ────────────────────────────────
+    print("[3/3] 최종 리포트 생성 중(LLM)...")
+    report_md = generate_final_report(
+        date_text=date_text,
+        recommendation=recommendation,
+        restaurants=restaurants,
+        errors=errors,
+        api_key=gemini_key,
+    )
+    print("  - 리포트 생성 완료")
 
-        header = data.get("response", {}).get("header", {})
-        result_code = header.get("resultCode")
-        result_msg = header.get("resultMsg")
+    # ── 결과 저장 ─────────────────────────────────────────────
+    saved = save_results(
+    date_text=date_text,
+    recommendation=recommendation,
+    restaurants=restaurants,
+    report=report_md,         # ✅ 올바른 인자명
+    errors=errors,            # ✅ errors 인자도 확인
+)
 
-        print("결과 코드:", result_code)
-        print("결과 메시지:", result_msg)
+    print(f"\n완료! {saved['md_path']} 를 확인하세요.")
+    print(f"원본 데이터: {saved['json_path']}")
 
-        if result_code != "0000":
-            print("API 응답에 문제가 있습니다.")
-            print(response.text)
-            return
-
-        items = parse_items(data)
-        total_count = get_total_count(data)
-
-        print_places(region_name, content_name, items, total_count, page_no)
-
-    except requests.exceptions.Timeout:
-        print("요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.")
-    except requests.exceptions.RequestException as e:
-        print("네트워크 요청 중 오류가 발생했습니다:", e)
-    except ValueError:
-        print("JSON 데이터 처리 중 오류가 발생했습니다.")
-    except Exception as e:
-        print("예상하지 못한 오류가 발생했습니다:", e)
+    if errors:
+        print(f"\n[참고] 실행 중 {len(errors)}건의 오류가 기록되었습니다.")
+        print("       리포트 하단 'errors 섹션'을 확인하세요.")
 
 
 if __name__ == "__main__":
