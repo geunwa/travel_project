@@ -1,7 +1,5 @@
 import json
 import re
-import json
-import re
 import requests
 from pathlib import Path
 
@@ -23,7 +21,7 @@ def normalize_city_keyword(city: str) -> str:
 
 RESULTS_DIR = Path("results")
 REQUIRED_KEYS = {"recommended_cities", "weather", "events", "reason"}
-GEMINI_MODEL = "gemini-3.6-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 _NO_AFC = types.GenerateContentConfig(
     automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
@@ -113,9 +111,9 @@ def search_restaurants(city: str, api_key: str, errors: list, size: int = 5) -> 
     """Kakao Local API로 특정 도시 맛집 검색."""
     url = "https://dapi.kakao.com/v2/local/search/keyword.json"
     headers = {"Authorization": f"KakaoAK {api_key}"}
-    keyword = normalize_city_keyword(city)   # ← 추가
+    keyword = normalize_city_keyword(city)
     params = {
-        "query": f"{keyword} 맛집",          # ← city → keyword 로 변경
+        "query": f"{keyword} 맛집",
         "size": size,
         "category_group_code": "FD6",
     }
