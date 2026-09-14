@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from utils import (
     generate_city_recommendation,
-    search_restaurants,
+    search_restaurants_by_cities,   # [변경] 복수 지역 검색 함수
     generate_final_report,
     save_results,
     load_cached_raw,
@@ -18,7 +18,7 @@ def parse_args():
     """CLI 인자 파싱: --date 필수"""
     parser = argparse.ArgumentParser(
         prog="main.py",
-        description="Gemini + Kakao 국내 여행 추천 프로그램",
+        description="Gemini + Kakao 국내 여행 추천 프로그램 (복수 지역)",
     )
     parser.add_argument(
         "--date",
@@ -86,45 +86,51 @@ def main():
     cached = load_cached_raw(date_text)
     if cached is not None:
         print(f"[캐시] {date_text} 원본 데이터가 존재하여 재사용합니다.")
-        recommendation = cached.get("recommendation", {})
-        restaurants    = cached.get("restaurants", [])
-        # [수정] = 대입 대신 extend() 사용 → 이후 단계 오류도 누적 가능
+        recommendation      = cached.get("recommendation", {})
+        # [변경] restaurants(list) → restaurants_by_city(dict)
+        restaurants_by_city = cached.get("restaurants_by_city", {})
         errors.extend(cached.get("errors", []))
 
-        city = recommendation.get("recommended_city", "")
-        print(f"[1/3] (캐시) 추천 도시: {city}")
-        print(f"[2/3] (캐시) 맛집 {len(restaurants)}곳 로드 완료")
+        # [변경] 단수 city → 복수 cities
+        cities = recommendation.get("recommended_cities", [])
+        print(f"[1/3] (캐시) 추천 도시: {', '.join(cities) if cities else '(없음)'}")
+        total = sum(len(v) for v in restaurants_by_city.values())
+        print(f"[2/3] (캐시) 맛집 총 {total}곳 로드 완료 ({len(cities)}개 지역)")
 
     else:
-        # ── [1/3] LLM 1차 추천 ───────────────────────────────
+        # ── [1/3] LLM 1차 추천 (복수 지역) ────────────────────
         print("[1/3] 1차 추천 생성 중(LLM)...")
         recommendation = generate_city_recommendation(
             date_text=date_text,
             api_key=gemini_key,
             errors=errors,
         )
-        city = recommendation.get("recommended_city", "")
-        print(f'  - recommended_city: "{city}"')
+        # [변경] 복수 도시 목록
+        cities = recommendation.get("recommended_cities", [])
+        print(f'  - recommended_cities: {cities}')
 
-        # ── [2/3] Kakao 맛집 검색 ────────────────────────────
+        # ── [2/3] Kakao 맛집 검색 (도시별 루프) ───────────────
         print("[2/3] 맛집 검색 중(지도/장소 API)...")
-        restaurants = search_restaurants(
-            city=city,
+        restaurants_by_city = search_restaurants_by_cities(
+            cities=cities,
             api_key=kakao_key,
             errors=errors,
             size=5,
         )
-        if restaurants:
-            print(f"  - 맛집 {len(restaurants)}곳 검색 완료")
-        else:
-            print("  - 검색 결과 0건 → '데이터 없음'으로 다음 단계 진행")
+        # [변경] 도시별 검색 결과 출력
+        for city in cities:
+            count = len(restaurants_by_city.get(city, []))
+            if count:
+                print(f"  - {city}: 맛집 {count}곳 검색 완료")
+            else:
+                print(f"  - {city}: 검색 결과 0건 → '데이터 없음'으로 진행")
 
-    # ── [3/3] LLM 최종 리포트 ────────────────────────────────
+    # ── [3/3] LLM 최종 리포트 (지역별) ───────────────────────
     print("[3/3] 최종 리포트 생성 중(LLM)...")
     report_md = generate_final_report(
         date_text=date_text,
         recommendation=recommendation,
-        restaurants=restaurants,
+        restaurants_by_city=restaurants_by_city,   # [변경] dict 전달
         errors=errors,
         api_key=gemini_key,
     )
@@ -132,12 +138,12 @@ def main():
 
     # ── 결과 저장 ─────────────────────────────────────────────
     saved = save_results(
-    date_text=date_text,
-    recommendation=recommendation,
-    restaurants=restaurants,
-    report=report_md,         # ✅ 올바른 인자명
-    errors=errors,            # ✅ errors 인자도 확인
-)
+        date_text=date_text,
+        recommendation=recommendation,
+        restaurants_by_city=restaurants_by_city,   # [변경] dict 전달
+        report=report_md,
+        errors=errors,
+    )
 
     print(f"\n완료! {saved['md_path']} 를 확인하세요.")
     print(f"원본 데이터: {saved['json_path']}")
