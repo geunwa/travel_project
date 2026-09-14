@@ -1,224 +1,165 @@
-# Gemini + Kakao 국내 여행 추천 프로그램
+# 국내 여행 추천 프로그램
 
-## 1. 프로그램 개요
+특정 날짜를 입력하면 Gemini(LLM)가 해당 시기에 적합한 국내 여행지를 추천하고,
+Kakao Local API로 도시별 맛집 정보를 수집하여 리포트를 생성하는 프로그램이다.
+결과는 콘솔 출력, JSON, Markdown 리포트로 저장되며, Streamlit 기반 웹 화면으로도 확인할 수 있다.
 
-이 프로그램은 Google Gemini API와 Kakao Local API를 활용하여  
-사용자가 입력한 여행 날짜에 맞는 국내 도시 **2~3곳**을 추천하고  
-도시별 맛집 정보와 함께 여행 리포트를 자동 생성하는 Python CLI 프로그램입니다.
+## 주요 기능
 
----
+- 날짜 입력에 따른 여행지 추천 (Gemini 기반)
+  - 추천 도시, 날씨 요약, 행사/축제, 추천 이유 제공
+- 도시별 맛집 정보 수집 (Kakao Local API)
+  - 상호명, 주소, 카테고리, 전화번호, 카카오맵 URL, 좌표(경도/위도)
+- 결과 저장
+  - JSON 파일 (원본 데이터)
+  - Markdown 리포트 (사람이 읽기 좋은 형태)
+- 오류 처리 및 오류 요약 리포트 제공
+- Streamlit 웹 GUI 제공
+  - 날짜별 리포트 선택, 맛집 목록, 지도 표시, 카카오맵 링크
 
-## 2. 주요 기능
+## 보너스 구현 사항
 
-- Gemini LLM으로 날짜 기반 국내 도시 2~3곳 추천 (날씨, 행사, 추천 이유 포함)
-- Kakao Local API로 **추천된 여러 도시를 순회하며 도시별 맛집 검색** (도시당 최대 5곳)
-- Gemini LLM으로 Markdown 형식 여행 리포트 자동 생성 (도시별 소제목 구분)
-- `results/` 폴더에 JSON 원본 데이터 + Markdown 리포트 저장
-- 같은 날짜 재실행 시 캐시 재사용 (API 호출 생략, 리포트만 재생성)
-- LLM 응답 파싱 실패 시 1회 재시도 후 기본값 반환
-- LLM 리포트 생성 실패 시 폴백 리포트 자동 조립
-- 실행 중 발생한 오류를 누적하여 리포트 하단에 기록
+- 복수 지역 추천: 하나의 날짜에 대해 여러 도시를 추천하고 각 도시별로 맛집을 검색
+- 결과 캐싱: 동일한 날짜의 원본 JSON이 이미 존재하면 API 호출을 생략하고 저장된 결과를 재사용
 
----
+## 프로젝트 구조
 
-## 3. 사용 기술
+```
+travel_project/
+├── main.py              # CLI 실행 진입점 (인자 파싱, 실행 흐름 제어)
+├── utils.py             # 추천/검색/리포트 생성/저장/캐싱 로직
+├── app.py               # Streamlit 웹 GUI
+├── results/             # 생성된 결과 저장 폴더
+│   ├── travel_YYYY-MM-DD.json
+│   └── travel_YYYY-MM-DD.md
+├── .env                 # API 키 저장 (git 미포함)
+├── requirements.txt     # 의존성 목록
+└── README.md
+```
 
-- Python 3.10+
-- google-genai (Gemini `gemini-3.6-flash`)
-- requests (Kakao Local API)
-- python-dotenv
+## 실행 환경
 
----
+- Python 3.10 이상
+- 필요 라이브러리
+  - streamlit
+  - pandas
+  - google-genai (Gemini API)
+  - requests (Kakao Local API 호출)
+  - python-dotenv (.env 로드)
 
-## 4. 파일 구성
+## 설치 방법
 
-    travel_project/
-    ├─ main.py          # CLI 진입점 (argparse, 파이프라인 실행)
-    ├─ utils.py         # API 호출, 파싱, 저장 함수 모음
-    ├─ README.md        # 프로젝트 설명 및 실행 방법
-    ├─ requirements.txt # 필요한 라이브러리 목록
-    ├─ .env             # API 키 설정 파일 (직접 생성, 제출 제외)
-    ├─ .env.example     # API 키 형식 예시
-    ├─ .gitignore       # .env, results/ 등 제외 목록
-    └─ results/         # 실행 결과 저장 폴더 (자동 생성)
-        ├─ travel_2027-03-01.json
-        └─ travel_2027-03-01.md
+```bash
+# 1. 저장소 클론
+git clone https://github.com/geunwa/travel_project.git
+cd travel_project
 
-### 파일 설명
+# 2. 가상환경 생성 및 활성화 (선택)
+python -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
 
-- `main.py` : CLI 인자 파싱, API 키 로드, 3단계 파이프라인 실행, 캐시 분기 처리
-- `utils.py` : LLM 추천 생성, 도시별 맛집 검색, 리포트 생성, 결과 저장, 캐시 로드
-- `README.md` : 프로젝트 설명 및 실행 방법
-- `requirements.txt` : 필요한 라이브러리 목록
-- `.env.example` : API 키 입력 형식을 보여주는 예시 파일
+# 3. 의존성 설치
+pip install -r requirements.txt
+```
 
----
+## 환경 변수 설정
 
-## 5. 실행 방법
+프로젝트 루트에 `.env` 파일을 생성하고 다음 키를 입력한다.
 
-### 1) 프로젝트 폴더로 이동
+```
+GEMINI_API_KEY=발급받은_Gemini_API_키
+KAKAO_REST_API_KEY=발급받은_카카오_REST_API_키
+```
 
-    cd travel_project
+API 키가 설정되지 않은 경우, 프로그램 실행 시 설정 방법을 안내하고 종료한다.
 
-### 2) 필요한 라이브러리 설치
+## 실행 방법
 
-    pip install -r requirements.txt
+### 1. CLI 실행
 
-### 3) API 키 설정
+여행 날짜를 `--date` 인자로 전달한다. (형식: YYYY-MM-DD)
 
-`.env.example` 파일을 참고하여 `.env` 파일을 직접 생성합니다.
+```bash
+python main.py --date "2027-03-01"
+```
 
-`.env` 파일 예시:
+- 실행 흐름
+  - [1/3] Gemini로 추천 도시, 날씨, 행사/축제, 추천 이유 생성
+  - [2/3] Kakao Local API로 도시별 맛집 검색
+  - [3/3] Gemini로 최종 Markdown 리포트 생성
+- 실행 결과는 콘솔에 출력되며, `results/` 폴더에 JSON과 Markdown 리포트가 저장된다.
+- 동일한 날짜의 원본 데이터가 존재하면 API 호출을 생략하고 캐시를 재사용한다.
 
-    GEMINI_API_KEY=발급받은_Gemini_키
-    KAKAO_REST_API_KEY=발급받은_Kakao_REST_키
+날짜 형식이 올바르지 않으면 사용법을 안내하고 종료한다.
 
-### 4) 프로그램 실행
+### 2. 웹 GUI 실행
 
-    python main.py --date "YYYY-MM-DD"
+```bash
+streamlit run app.py
+```
 
-실행 예시:
+- 브라우저에서 `localhost:8501`(또는 지정된 포트)로 접속한다.
+- 사이드바에서 날짜를 선택하면 해당 리포트를 확인할 수 있다.
+- 맛집 위치는 지도에 표시되며, 각 맛집의 카카오맵 링크를 통해 상세 정보로 이동할 수 있다.
 
-    python main.py --date "2027-03-01"
+## 출력 결과 예시
 
----
+### JSON 구조
 
-## 6. API 키 발급 방법
+```json
+{
+  "date": "2027-03-01",
+  "recommendation": {
+    "recommended_cities": ["제주", "광양", "부산"],
+    "weather": "3월 초는 남부 지방을 중심으로 완연한 봄기운이 시작되는 시기입니다. 낮 기온은 포근하지만 일교차가 크므로 따뜻한 겉옷이 필요합니다.",
+    "events": ["광양 매화축제", "제주 산방산 유채꽃 봄맞이"],
+    "reason": "삼일절 연휴를 활용해 가장 먼저 봄 소식을 만날 수 있는 남부권 도시들입니다."
+  },
+  "restaurants_by_city": {
+    "제주": [
+      {
+        "name": "고집돌우럭 함덕점",
+        "address": "제주특별자치도 제주시 조천읍 신북로 491-9",
+        "category": "음식점 > 한식",
+        "phone": "0507-1353-6061",
+        "url": "http://place.map.kakao.com/28082185",
+        "x": 126.66309886995431,
+        "y": 33.54381497240532
+      }
+    ]
+  },
+  "errors": []
+}
+```
 
-### Gemini API 키
+### Markdown 리포트
 
-1. [Google AI Studio](https://aistudio.google.com/) 접속
-2. 로그인 후 **Get API Key** 클릭
-3. 발급받은 키를 `.env`의 `GEMINI_API_KEY`에 입력
+`results/travel_YYYY-MM-DD.md` 파일에 다음 항목이 포함된 리포트가 생성된다.
 
-### Kakao REST API 키
-
-1. [Kakao Developers](https://developers.kakao.com/) 접속
-2. 로그인 후 **내 애플리케이션 > 애플리케이션 추가**
-3. **앱 키 > REST API 키** 복사
-4. 발급받은 키를 `.env`의 `KAKAO_REST_API_KEY`에 입력
-
-### 주의사항
-
-- 실제 API 키가 들어 있는 `.env` 파일은 제출하지 않습니다.
-- 제출용으로는 `.env.example` 파일만 포함하는 것을 권장합니다.
-
-제출용 `.env.example` 예시:
-
-    GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-    KAKAO_REST_API_KEY=YOUR_KAKAO_REST_API_KEY
-
----
-
-## 7. 실행 예시
-
-### 명령어
-
-    python main.py --date "2027-03-01"
-
-### 터미널 출력
-
-    [1/3] 1차 추천 생성 중(LLM)...
-      - recommended_cities: ['제주', '경주', '광양']
-    [2/3] 맛집 검색 중(지도/장소 API)...
-      - 제주: 맛집 5곳 검색 완료
-      - 경주: 맛집 5곳 검색 완료
-      - 광양: 맛집 5곳 검색 완료
-    [3/3] 최종 리포트 생성 중(LLM)...
-      - 리포트 생성 완료
-
-    완료! results/travel_2027-03-01.md 를 확인하세요.
-    원본 데이터: results/travel_2027-03-01.json
-
-### 캐시 재사용 시 (같은 날짜 재실행)
-
-같은 날짜로 다시 실행하면 저장된 JSON 원본 데이터를 재사용하여  
-API 호출(추천 생성 · 맛집 검색)을 생략하고 리포트만 다시 생성합니다.
-
-    [캐시] 2027-03-01 원본 데이터가 존재하여 재사용합니다.
-    [1/3] (캐시) 추천 도시: 제주, 경주, 광양
-    [2/3] (캐시) 도시별 맛집 데이터 로드 완료
-    [3/3] 최종 리포트 생성 중(LLM)...
-      - 리포트 생성 완료
-
-    완료! results/travel_2027-03-01.md 를 확인하세요.
-    원본 데이터: results/travel_2027-03-01.json
-
----
-
-## 8. 결과물 확인 방법
-
-실행 후 `results/` 폴더에 두 파일이 생성됩니다.
-
-| 파일 | 내용 |
-|------|------|
-| `travel_YYYY-MM-DD.json` | 추천 데이터, 도시별 맛집 목록, 오류 기록 원본 |
-| `travel_YYYY-MM-DD.md` | 최종 여행 리포트 (Markdown) |
-
-### 리포트 포함 섹션
-
-- 추천 지역 (여러 도시 소개)
+- 추천 지역
 - 추천 이유
 - 날씨 요약
 - 행사/축제
-- 도시별 맛집 추천 (도시마다 소제목으로 구분)
+- 도시별 맛집 추천 (카카오맵 링크 포함)
 - 도시별 1일 일정 제안
 - 오류 요약
 
----
+## 오류 처리
 
-## 9. 예외 처리 내용
+- 날짜 형식 오류, API 키 미설정 시 안내 메시지를 출력하고 종료한다.
+- API 호출 실패, 데이터 누락 등 예외 상황을 처리하여 프로그램이 비정상 종료되지 않도록 한다.
+- 실행 중 발생한 오류는 리스트로 누적되어 결과의 `errors` 항목과 리포트의 "오류 요약" 섹션에 기록된다.
 
-| 상황 | 처리 방식 |
-|------|----------|
-| API 키 미설정 | 즉시 종료 + 설정 방법 안내 |
-| 날짜 형식 오류 | 즉시 종료 + 올바른 형식 안내 |
-| LLM JSON 파싱 실패 | strict 프롬프트로 1회 재시도 |
-| LLM 2회 모두 실패 | 기본값(서울) 반환 + errors 기록 |
-| Kakao 인증 실패 | errors 기록 후 다음 도시/단계 진행 |
-| Kakao 검색 결과 0건 | 해당 도시 빈 목록 처리 + errors 기록 |
-| 네트워크 타임아웃 | errors 기록 후 다음 도시/단계 진행 |
-| LLM 리포트 생성 실패 | 폴백 리포트 자동 조립 후 저장 |
+## 과제 요구사항 대응
 
----
-
-## 10. 과제 요구사항 반영 내용
-
-### 필수 요구사항
-
-- 외부 API 2종 활용 (Gemini, Kakao Local)
-- Python CLI 프로그램 구현 (argparse)
-- `requests` 라이브러리 사용
-- `.env` 파일을 통한 API 키 분리
-- CLI 인자 입력 및 검증
-- JSON 응답 파싱 + 재시도 로직
-- Markdown 리포트 자동 생성 및 파일 저장
-- 단계별 예외 처리 + 오류 누적 기록
-- 함수 분리를 통한 코드 구조화 (utils.py)
-
-### 보너스 요구사항
-
-- **복수 지역 추천 및 처리** : LLM이 추천한 2~3개 도시를 순회하며
-  도시별로 맛집을 검색하고, 리포트에 도시별 소제목·일정으로 구분 생성
-- **결과 캐싱** : 같은 날짜 재실행 시 JSON 원본을 재사용하여
-  불필요한 API 호출을 생략
-
----
-
-## 11. 제출 안내
-
-제출 시 포함하는 파일:
-
-- `main.py`
-- `utils.py`
-- `README.md`
-- `requirements.txt`
-- `.env.example`
-
-### 주의
-
-- 실제 API 키가 포함된 `.env` 파일은 제출하지 않습니다.
-- `results/` 폴더는 제출하지 않아도 됩니다 (실행 시 자동 생성).
-- 제출 전 `python main.py --date "2027-03-01"` 로 정상 실행되는지 확인합니다.
-
----
+| 요구사항 | 구현 여부 |
+| --- | --- |
+| CLI 기반 실행 | 완료 |
+| LLM(Gemini)을 이용한 여행지 추천 | 완료 |
+| Kakao API 맛집 정보 수집 | 완료 |
+| JSON 저장 | 완료 |
+| Markdown 리포트 저장 | 완료 |
+| 오류 처리 | 완료 |
+| (보너스) 복수 지역 추천 | 완료 |
+| (보너스) 결과 캐싱 | 완료 |
+| (개인보너스) Streamlit GUI | 완료 |

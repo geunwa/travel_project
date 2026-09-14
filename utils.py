@@ -38,6 +38,14 @@ def _validate_recommendation(data: dict) -> bool:
     return isinstance(cities, list) and len(cities) > 0
 
 
+def _to_float(value):
+    """좌표 문자열을 float로 변환, 실패 시 None 반환."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def generate_city_recommendation(date_text: str, api_key: str, errors: list) -> dict:
     """Gemini LLM으로 날짜 기반 국내 도시 2~3곳 추천. 파싱 실패 시 1회 재시도."""
     client = genai.Client(api_key=api_key)
@@ -114,6 +122,8 @@ def search_restaurants(city: str, api_key: str, errors: list, size: int = 5) -> 
                 "category": doc.get("category_name", ""),
                 "phone": doc.get("phone", ""),
                 "url": doc.get("place_url", ""),
+                "x": _to_float(doc.get("x")),   # 경도 (longitude)
+                "y": _to_float(doc.get("y")),   # 위도 (latitude)
             })
         return restaurants
 
@@ -155,7 +165,12 @@ def generate_final_report(
         cities_block += f"\n### {city}\n"
         if rlist:
             for i, r in enumerate(rlist, 1):
-                cities_block += f"{i}. {r['name']} - {r['address']} ({r['category']})\n"
+                url = r.get("url", "")
+                # url을 함께 넘겨 LLM이 마크다운 링크로 렌더링하도록 유도
+                cities_block += (
+                    f"{i}. {r['name']} - {r['address']} ({r['category']}) "
+                    f"[url:{url}]\n"
+                )
         else:
             cities_block += "- 데이터 없음 (장소 검색 결과 0건)\n"
 
@@ -169,7 +184,7 @@ def generate_final_report(
 행사/축제: {', '.join(events) if events else '없음'}
 추천 이유: {reason}
 
-도시별 맛집 목록:
+도시별 맛집 목록 (각 항목의 [url:...]은 해당 맛집의 카카오맵 링크입니다):
 {cities_block}
 
 다음 섹션을 반드시 포함해주세요:
@@ -180,6 +195,12 @@ def generate_final_report(
 5. 도시별 맛집 추천 (도시마다 소제목으로 구분, 0건이면 '데이터 없음'으로 표기)
 6. 도시별 1일 일정 제안 (각 도시별로 오전/오후/저녁 수준)
 7. 오류 요약
+
+맛집 출력 규칙(중요):
+- 각 맛집의 이름은 반드시 마크다운 링크 형식 [맛집이름](카카오맵url) 으로 작성하세요.
+- 카카오맵url은 위 목록의 [url:...] 안에 있는 주소를 사용하세요.
+- url이 비어 있으면 링크 없이 이름만 출력하세요.
+- 링크 아래 줄에 주소와 카테고리를 함께 표기하세요.
 
 주의: 반드시 위 날짜({date_text})의 계절에 맞는 내용만 작성하세요.
 Markdown 형식으로 작성하세요."""
@@ -200,7 +221,17 @@ Markdown 형식으로 작성하세요."""
             fallback_cities += f"\n### {city}\n"
             if rlist:
                 for i, r in enumerate(rlist, 1):
-                    fallback_cities += f"{i}. {r['name']} - {r['address']} ({r['category']})\n"
+                    url = r.get("url", "")
+                    # 폴백은 코드가 직접 마크다운 링크를 조립 (LLM 미사용이라 확실함)
+                    if url:
+                        name_md = f"[{r['name']}]({url})"
+                    else:
+                        name_md = r["name"]
+                    fallback_cities += (
+                        f"{i}. {name_md}\n"
+                        f"   * 주소: {r['address']}\n"
+                        f"   * 카테고리: {r['category']}\n"
+                    )
             else:
                 fallback_cities += "- 데이터 없음\n"
 
