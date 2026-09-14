@@ -1,163 +1,177 @@
-# 평가자용 체크리스트 & 시연 가이드
+# 📋 평가 시연 가이드 (EVALUATION.md)
 
-> 이 문서는 평가자가 **위에서 아래로 명령어를 복사-붙여넣기**하며
-> 프로그램을 실시간으로 검증할 수 있도록 구성되어 있습니다.
-> 예상 소요 시간: 약 5분
-
----
-
-## 0. 사전 준비
-
-### 0-1. 의존성 설치
-
-```bash
-pip install -r requirements.txt
-```
-
-### 0-2. API 키 설정
-
-프로젝트 루트에 `.env` 파일을 만들고 아래 두 키를 입력합니다.
-
-```
-GEMINI_API_KEY=발급받은_Gemini_API_키
-KAKAO_REST_API_KEY=발급받은_카카오_REST_API_키
-```
-
-**API 키 발급 링크**
-- Gemini API 키: https://aistudio.google.com/app/apikey
-- Kakao REST API 키: https://developers.kakao.com/console/app
-  - 앱 생성 → [앱 설정 > 앱 키] → **REST API 키** 사용
+> 본 문서는 **평가자에게 과제 완성도를 순서대로 설명**하기 위한 시연 가이드입니다.
+> 시연 날짜는 캐시가 없는 **2026-12-31**을 기준으로 진행하여 실시간 API 호출 과정을 확인합니다.
 
 ---
 
-## 1. CLI 실행 시연 (핵심)
+## 1. 과제 소개 (간결하게)
 
-### 1-1. 기본 실행
+**Python 응용: API 활용 국내 여행지 추천 프로그램**
 
-```bash
-python main.py --date "2027-03-01"
-```
+- 사용자가 여행 날짜를 입력하면,
+- **① LLM(Gemini)** 이 해당 시기에 좋은 여행지를 추천하고,
+- **② 지도 API(Kakao Local)** 로 그 도시의 맛집을 검색한 뒤,
+- **③ LLM** 이 이를 종합해 **최종 여행 리포트(Markdown)** 를 생성합니다.
 
-**확인 포인트**
-- [ ] 콘솔에 `[1/3] → [2/3] → [3/3]` 단계가 순서대로 출력됨
-- [ ] `results/travel_2027-03-01.json` 생성됨
-- [ ] `results/travel_2027-03-01.md` 생성됨
-
-### 1-2. 생성된 결과 즉시 확인
-
-```bash
-# JSON 결과 확인 (한글이 깨지면 인코딩 옵션 필요 - 아래 주의 참고)
-python -c "print(open('results/travel_2027-03-01.json', encoding='utf-8').read())"
-```
-
-```bash
-# Markdown 리포트 확인
-python -c "print(open('results/travel_2027-03-01.md', encoding='utf-8').read())"
-```
-
-> ⚠️ **한글 깨짐 주의**
-> PowerShell에서 `cat` 으로 열면 한글이 깨져 보일 수 있으나,
-> **이는 터미널 출력 인코딩 문제이며 파일은 UTF-8로 정상 저장되어 있습니다.**
-> PowerShell에서 확인하려면:
-> ```powershell
-> Get-Content results/travel_2027-03-01.json -Encoding UTF8
-> ```
-
-**확인 포인트**
-- [ ] `recommended_cities` 에 2~3개 도시가 축약형(예: "제주", "광양", "부산")으로 들어있음
-- [ ] `restaurants_by_city` 의 키가 `recommended_cities` 와 일치함
-- [ ] 각 맛집에 상호명/주소/카테고리/전화/URL/좌표(x,y)가 있음
+> 핵심: 단일 API 호출이 아니라 **여러 API를 엮어 인사이트를 만드는 흐름**을 구현했습니다.
 
 ---
 
-## 2. 필수 요구사항 매핑
+## 2. 최종 결과물 체크리스트 ✅
 
-| 요구사항 | 확인 방법 | 체크 |
-| --- | --- | --- |
-| CLI 기반 실행 | `python main.py --date ...` 동작 | [ ] |
-| LLM 여행지 추천 | JSON `recommendation` 필드 | [ ] |
-| Kakao 맛집 수집 | JSON `restaurants_by_city` 필드 | [ ] |
-| JSON 저장 | `results/*.json` 존재 | [ ] |
-| Markdown 저장 | `results/*.md` 존재 | [ ] |
-| 오류 처리 | 아래 3번 | [ ] |
+| 요구 결과물 | 구현 여부 | 위치 / 확인 방법 |
+|---|:---:|---|
+| **CLI 기반 Python 프로그램** | ✅ | `python main.py --date "YYYY-MM-DD"` |
+| 진행 로그 + 저장 경로 안내 | ✅ | 실행 시 `[1/3] → [2/3] → [3/3]` 콘솔 출력 |
+| **원본 데이터 JSON** (1차 추천 + 맛집 + errors) | ✅ | `results/travel_YYYY-MM-DD.json` |
+| **최종 여행 리포트 Markdown** | ✅ | `results/travel_YYYY-MM-DD.md` |
+| **README.md** (개요/실행법/키설정/확인법/보안) | ✅ | 프로젝트 루트 `README.md` |
+
+### 🎬 실시간 시연 (터미널에 아래 명령어를 복사해 실행)
+
+```bash
+python main.py --date "2026-12-31"
+```
+
+> ⚠️ VS Code ▶️ 버튼으로 실행하지 마세요. `--date` 인자가 없어 사용법만 출력됩니다. 반드시 터미널에서 인자와 함께 실행합니다.
+
+**기대 출력:**
+
+```
+[1/3] 1차 추천 생성 중(LLM)...
+  - recommended_cities: [...]
+[2/3] 맛집 검색 중(지도/장소 API)...
+  - 맛집 검색 완료
+[3/3] 최종 리포트 생성 중(LLM)...
+  - 리포트 생성 완료
+
+완료! results/travel_2026-12-31.md 를 확인하세요.
+```
+
+시연 후 생성되는 파일:
+- `results/travel_2026-12-31.json` (원본 데이터)
+- `results/travel_2026-12-31.md` (최종 리포트)
 
 ---
 
-## 3. 오류 처리 시연
+## 3. 과제 목표 달성 설명 (구두 설명용)
 
-### 3-1. 잘못된 날짜 형식
+> 이 과제로 아래 4가지를 **말로 설명할 수 있음**을 보여드립니다.
 
-```bash
-python main.py --date "2027/03/01"
-```
-
-- [ ] 사용법(형식: YYYY-MM-DD)을 안내하고 정상 종료 (비정상 종료 아님)
-
-### 3-2. API 키 미설정
-
-`.env` 를 잠시 비우거나 이름을 바꾼 뒤 실행:
-
-```bash
-python main.py --date "2027-03-01"
-```
-
-- [ ] API 키 설정 방법을 안내하고 정상 종료
-
-> 시연 후 `.env` 를 원래대로 복구하세요.
+| 목표 | 프로젝트에서의 구현 근거 |
+|---|---|
+| **REST API 요청/응답, GET/POST 차이** | LLM 호출은 `POST`(본문에 프롬프트), 맛집 검색은 `GET`(쿼리 파라미터) |
+| **LLM 출력 → JSON 구조화 → 다음 단계 입력** | 1차 추천을 JSON으로 파싱 → `recommended_cities`를 맛집 검색 입력으로 연결 |
+| **API 대표 오류 대응** (인증/쿼터/네트워크/파싱) | `try-except`로 분기, 오류를 `errors` 리스트에 기록 후 리포트에 요약 |
+| **.env로 키 관리하는 이유** | 키 노출 방지·교체 용이·과금 사고 예방 → `.gitignore`로 `.env` 제외 |
 
 ---
 
-## 4. 보너스 기능 시연
+## 4. 기능 요구 사항 충족 설명
 
-### 4-1. 복수 지역 추천
+| 요구 사항 | 구현 내용 |
+|---|---|
+| **CLI (argparse)** | `main.py`에서 `--date` 필수 옵션 파싱, 잘못된 형식 시 사용법 출력 후 종료 |
+| **날짜 형식 검증** | `YYYY-MM-DD` 형식 검증 (예: `2026-13-99` 입력 시 오류 안내) |
+| **LLM API (택1)** | ✅ **Google Gemini** (`gemini-2.5-flash`) |
+| **지도 API (택1)** | ✅ **Kakao Local** (키워드 기반 맛집 검색) |
+| **1차 JSON 스키마** | `recommended_cities`, `weather`, `events[]`, `reason` 포함 |
+| **맛집 검색** | 추천 도시 기준 맛집 검색, 필드: `name/address/category/url/x/y` |
+| **검색 0건 처리** | 중단 없이 "데이터 없음"으로 다음 단계 진행 |
+| **최종 리포트** | 추천지역·이유·날씨·행사·맛집·1일 일정 포함 |
+| **에러 처리** | 키 미설정 즉시 종료 / 지도 실패 시 리포트 계속 / JSON 파싱 실패 시 **재시도 1회** |
+| **결과 저장** | `results/`에 JSON(추천+맛집+errors) & MD 저장 |
+
+### 🎬 검증용 시연 명령어
+
+**① 잘못된 날짜 형식 검증**
 
 ```bash
-python -c "import json; d=json.load(open('results/travel_2027-03-01.json', encoding='utf-8')); print('추천 도시:', d['recommendation']['recommended_cities']); print('맛집 수집 도시:', list(d['restaurants_by_city'].keys()))"
+python main.py --date "2026-99-99"
 ```
 
-- [ ] 추천 도시가 여러 개이고, 각 도시별 맛집이 수집됨
-- [ ] 두 리스트(추천 도시 / 수집 도시)가 일치함
+→ 사용법 안내 후 종료되는지 확인
 
-### 4-2. 결과 캐싱 (재실행)
+**② 인자 없이 실행 시 사용법 출력 확인**
 
 ```bash
-python main.py --date "2027-03-01"
+python main.py
 ```
 
-- [ ] `[1/3]~[3/3]` API 호출 없이 **캐시를 재사용**한다는 메시지가 출력됨
-- [ ] 첫 실행보다 눈에 띄게 빠르게 완료됨
+→ `사용법: python main.py --date "YYYY-MM-DD"` 안내 출력 확인
 
-### 4-3. Streamlit 웹 GUI
+---
+
+## 5. 보너스 과제 구현 여부
+
+| 보너스 | 구현 | 설명 |
+|---|:---:|---|
+| **복수 지역 추천** | ✅ | `recommended_cities`로 2~3개 도시 추천 → 도시별 맛집 검색·정리 |
+| **결과 캐싱** | ✅ | 같은 `--date` 재실행 시 저장된 JSON이 있으면 API 호출을 건너뛰고 리포트 재생성 |
+| **(개인) Streamlit 웹 GUI** | ✅ | `streamlit run app.py` — 날짜별 리포트·맛집 지도·카카오맵 링크 표시 |
+
+### 🎬 캐싱 시연 (2단계로 어필!)
+
+```bash
+# 방금 실행한 날짜를 한 번 더 실행
+python main.py --date "2026-12-31"
+```
+
+→ **API를 호출하지 않고** 기존 JSON을 재사용하는 로그 확인
+→ "외부 API 비용/속도 최적화"를 구현했음을 증명
+
+### 🎬 웹 GUI 시연 (개인 보너스, 브라우저 열림)
 
 ```bash
 streamlit run app.py
 ```
 
-- [ ] 브라우저에서 http://localhost:8501 접속됨
-- [ ] 사이드바에서 날짜 선택 시 리포트 표시
-- [ ] 맛집 위치가 지도에 표시됨
-- [ ] 각 맛집의 카카오맵 링크로 이동 가능
+→ 브라우저에서 `localhost:8501` 자동 접속, 날짜 선택 → 맛집 지도·링크 확인
 
 ---
 
-## 5. 코드 구조 참고 (선택)
+## 6. 개발 환경 & 제약 사항 준수
 
-| 파일 | 역할 |
-| --- | --- |
-| `main.py` | CLI 진입점, 인자 파싱, 실행 흐름 제어 |
-| `utils.py` | 추천/검색/리포트/저장/캐싱 로직 |
-| `app.py` | Streamlit 웹 GUI |
+### 개발 환경
+
+| 항목 | 준수 여부 |
+|---|:---:|
+| Python 3.10 이상 | ✅ |
+| 터미널 실행 가능 (CLI) | ✅ (`python main.py --date ...`) |
+
+### 제약 사항 (보안 — 필수)
+
+| 항목 | 준수 여부 | 근거 |
+|---|:---:|---|
+| API 키를 코드/README/결과물에 직접 작성 안 함 | ✅ | 모든 키는 `.env`에서 로드 |
+| `.env` / 환경변수 사용 | ✅ | `python-dotenv`로 로드 |
+| `.env`를 Git에서 제외 | ✅ | `.gitignore`에 `.env` 등록 (GitHub 미노출) |
+| 키 설정 예시 제공 | ✅ | `.env.example` 파일로 형식만 안내 |
+
+### 운영 안정성 (권장)
+
+| 항목 | 준수 여부 |
+|---|:---:|
+| 키 미설정 시 즉시 종료 + 안내 | ✅ |
+| 지도 API 실패 시에도 리포트 생성 진행 | ✅ |
+| LLM JSON 파싱 실패 시 재시도 **최대 1회** | ✅ |
+
+---
+
+## 📎 부록: API 키 설정 방법 (평가자용)
 
 ```bash
-# 각 파일 라인 수로 역할 분리 확인
-wc -l main.py utils.py app.py
+# 1) .env.example을 복사해 .env 생성
+cp .env.example .env      # Windows PowerShell: Copy-Item .env.example .env
+
+# 2) .env 파일에 본인 키 입력
+GEMINI_API_KEY=여기에_Gemini_키
+KAKAO_REST_API_KEY=여기에_Kakao_키
 ```
+
+> 상세 설정은 `README.md`를 참고하세요.
 
 ---
 
-## 참고 링크 모음
-
-- 저장소: https://github.com/geunwa/travel_project
-- Gemini API 키 발급: https://aistudio.google.com/app/apikey
-- Kakao Developers 콘솔: https://developers.kakao.com/console/app
-- Kakao Local API 문서(키워드 검색): https://developers.kakao.com/docs/latest/ko/local/dev-guide#search-by-keyword
+**저장소:** https://github.com/geunwa/travel_project
