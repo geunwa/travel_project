@@ -1,11 +1,25 @@
 import json
 import re
+import json
+import re
 import requests
 from pathlib import Path
 
 from google import genai
 from google.genai import types
 
+# ─── 키워드 전처리 ───────────────────────────────────────────
+def normalize_city_keyword(city: str) -> str:
+    """도시명 전처리: 괄호·특수문자 제거, 공백 정리.
+    
+    예시:
+        "제주(제주시)" → "제주 제주시"
+        "전주·한옥마을" → "전주 한옥마을"
+    """
+    city = re.sub(r"[\(\)\[\]·]", " ", city)  # 괄호·중점 제거
+    city = re.sub(r"\s+", " ", city).strip()   # 연속 공백 정리
+    return city
+# ─────────────────────────────────────────────────────────────
 
 RESULTS_DIR = Path("results")
 REQUIRED_KEYS = {"recommended_cities", "weather", "events", "reason"}
@@ -99,8 +113,9 @@ def search_restaurants(city: str, api_key: str, errors: list, size: int = 5) -> 
     """Kakao Local API로 특정 도시 맛집 검색."""
     url = "https://dapi.kakao.com/v2/local/search/keyword.json"
     headers = {"Authorization": f"KakaoAK {api_key}"}
+    keyword = normalize_city_keyword(city)   # ← 추가
     params = {
-        "query": f"{city} 맛집",
+        "query": f"{keyword} 맛집",          # ← city → keyword 로 변경
         "size": size,
         "category_group_code": "FD6",
     }

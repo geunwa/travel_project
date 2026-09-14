@@ -150,6 +150,56 @@ streamlit run app.py
 - API 호출 실패, 데이터 누락 등 예외 상황을 처리하여 프로그램이 비정상 종료되지 않도록 한다.
 - 실행 중 발생한 오류는 리스트로 누적되어 결과의 `errors` 항목과 리포트의 "오류 요약" 섹션에 기록된다.
 
+## 오류 대응 체크리스트
+
+### Kakao Local API 401 / 403 발생 시
+
+| 확인 순서 | 확인 항목 | 확인 방법 |
+|:---:|---|---|
+| 1 | `.env`의 `KAKAO_REST_API_KEY` 값이 올바른지 | `.env` 파일 직접 확인 |
+| 2 | **REST API 키**인지 (JavaScript 키 아님) | Kakao Developers 콘솔 → 내 애플리케이션 → 앱 키 |
+| 3 | 요청 헤더 형식이 `Authorization: KakaoAK {키}` 인지 | `utils.py` `headers` 변수 확인 |
+| 4 | 앱의 플랫폼에 Web 도메인이 등록되어 있는지 | Kakao Developers 콘솔 → 플랫폼 → Web |
+
+오류 로그 위치: 콘솔 출력 + `results/travel_YYYY-MM-DD.json` 의 `errors` 배열
+
+### Gemini API 429 (할당량 초과) 발생 시
+
+| 확인 순서 | 확인 항목 |
+|:---:|---|
+| 1 | 무료 등급 일일 한도(20회) 초과 여부 → 다음 날 재시도 |
+| 2 | 캐시된 날짜로 실행하면 API 호출 없이 리포트 재생성 가능 |
+
+```bash
+# 캐시 재사용 예시 (API 호출 없음)
+python main.py --date "2027-03-01"
+```
+
+## 지도 API 교체 가이드
+
+현재 구현은 **Kakao Local API**를 사용하며, 교체 시 `utils.py`의 아래 함수만 수정하면 된다.
+
+| 교체 대상 | 위치 | 유지해야 할 반환 형식 |
+|---|---|---|
+| API URL / 헤더 | `search_restaurants()` 내부 | 변경 가능 |
+| 반환 데이터 형식 | `search_restaurants()` return 값 | 아래 형식 유지 필수 |
+
+반환 형식 (이 구조를 유지하면 `main.py` 수정 불필요):
+
+```python
+[
+    {
+        "name": str,       # 장소명
+        "address": str,    # 도로명 주소
+        "category": str,   # 카테고리
+        "phone": str,      # 전화번호
+        "url": str,        # 장소 상세 URL
+        "x": float,        # 경도 (longitude)
+        "y": float,        # 위도 (latitude)
+    }
+]
+```
+
 ## 과제 요구사항 대응
 
 | 요구사항 | 구현 여부 |
