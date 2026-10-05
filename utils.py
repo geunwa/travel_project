@@ -6,18 +6,49 @@ from pathlib import Path
 from google import genai
 from google.genai import types
 
+# ─── 표준 지명 매핑 ───────────────────────────────────────────
+# 다양한 도시 표현을 하나의 표준 지명으로 통일 (Kakao 검색 정확도 향상)
+CITY_ALIAS = {
+    "제주": "제주",
+    "제주도": "제주",
+    "제주특별자치도": "제주",
+    "제주시": "제주",
+    "서울": "서울",
+    "서울특별시": "서울",
+    "서울시": "서울",
+    "부산": "부산",
+    "부산광역시": "부산",
+    "부산시": "부산",
+    "강릉": "강릉",
+    "강릉시": "강릉",
+    "전주": "전주",
+    "전주시": "전주",
+    "경주": "경주",
+    "경주시": "경주",
+}
+
+
 # ─── 키워드 전처리 ───────────────────────────────────────────
 def normalize_city_keyword(city: str) -> str:
-    """도시명 전처리: 괄호·특수문자 제거, 공백 정리.
-    
+    """도시명 전처리: 괄호·특수문자 제거, 공백 정리, 표준 지명 매핑.
+
     예시:
-        "제주(제주시)" → "제주 제주시"
-        "전주·한옥마을" → "전주 한옥마을"
+        "제주(제주시)" -> "제주 제주시" -> 매핑 -> "제주"
+        "전주·한옥마을" -> "전주 한옥마을"
     """
-    city = re.sub(r"[\(\)\[\]·]", " ", city)  # 괄호·중점 제거
-    city = re.sub(r"\s+", " ", city).strip()   # 연속 공백 정리
+    city = re.sub(r"[\(\)\[\]·]", " ", city)   # 괄호·중점 제거
+    city = re.sub(r"\s+", " ", city).strip()    # 연속 공백 정리
+
+    # 표준 지명 매핑: 전체가 별칭이면 표준명으로, 아니면 첫 단어 기준으로도 시도
+    if city in CITY_ALIAS:
+        return CITY_ALIAS[city]
+    first_word = city.split(" ")[0]
+    if first_word in CITY_ALIAS:
+        return CITY_ALIAS[first_word]
+
     return city
 # ─────────────────────────────────────────────────────────────
+
 
 RESULTS_DIR = Path("results")
 REQUIRED_KEYS = {"recommended_cities", "weather", "events", "reason"}
@@ -322,6 +353,17 @@ def load_cached_raw(date_text: str) -> dict | None:
         try:
             with open(json_path, "r", encoding="utf-8") as f:
                 return json.load(f)
+        except Exception:
+            return None
+    return None
+
+def load_cached_report(date_text: str) -> str | None:
+    """같은 날짜 md 리포트가 있으면 문자열로 반환, 없으면 None 반환."""
+    md_path = RESULTS_DIR / f"travel_{date_text}.md"
+    if md_path.exists():
+        try:
+            with open(md_path, "r", encoding="utf-8") as f:
+                return f.read()
         except Exception:
             return None
     return None

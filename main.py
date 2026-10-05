@@ -11,6 +11,7 @@ from utils import (
     generate_final_report,
     save_results,
     load_cached_raw,
+    load_cached_report,             # [추가] md 리포트 캐시 로드
 )
 
 
@@ -81,11 +82,14 @@ def main():
     # 실행 중 발생하는 오류를 누적 (JSON/리포트에 기록)
     errors = []
 
+    # 캐시 히트 시 [3/3] LLM 재생성을 건너뛰기 위한 변수
+    report_md = None
+
     # ── 캐싱(보너스) ──────────────────────────────────────────
     # 같은 날짜 원본 JSON이 있으면 API 호출을 건너뜁니다.
     cached = load_cached_raw(date_text)
     if cached is not None:
-        print(f"[캐시] {date_text} 원본 데이터가 존재하여 재사용합니다.")
+        print(f"[캐시] 기존 데이터를 재사용합니다: results/travel_{date_text}.json")
         recommendation      = cached.get("recommendation", {})
         # [변경] restaurants(list) → restaurants_by_city(dict)
         restaurants_by_city = cached.get("restaurants_by_city", {})
@@ -96,6 +100,9 @@ def main():
         print(f"[1/3] (캐시) 추천 도시: {', '.join(cities) if cities else '(없음)'}")
         total = sum(len(v) for v in restaurants_by_city.values())
         print(f"[2/3] (캐시) 맛집 총 {total}곳 로드 완료 ({len(cities)}개 지역)")
+
+        # [핵심] md 리포트도 캐시에서 로드 → LLM 재호출 방지
+        report_md = load_cached_report(date_text)
 
     else:
         # ── [1/3] LLM 1차 추천 (복수 지역) ────────────────────
@@ -125,16 +132,19 @@ def main():
             else:
                 print(f"  - {city}: 검색 결과 0건 → '데이터 없음'으로 진행")
 
-    # ── [3/3] LLM 최종 리포트 (지역별) ───────────────────────
-    print("[3/3] 최종 리포트 생성 중(LLM)...")
-    report_md = generate_final_report(
-        date_text=date_text,
-        recommendation=recommendation,
-        restaurants_by_city=restaurants_by_city,   # [변경] dict 전달
-        errors=errors,
-        api_key=gemini_key,
-    )
-    print("  - 리포트 생성 완료")
+    # ── [3/3] LLM 최종 리포트 (캐시 없을 때만 생성) ───────────
+    if report_md is None:
+        print("[3/3] 최종 리포트 생성 중(LLM)...")
+        report_md = generate_final_report(
+            date_text=date_text,
+            recommendation=recommendation,
+            restaurants_by_city=restaurants_by_city,   # [변경] dict 전달
+            errors=errors,
+            api_key=gemini_key,
+        )
+        print("  - 리포트 생성 완료")
+    else:
+        print("[3/3] (캐시) 기존 리포트를 재사용합니다.")
 
     # ── 결과 저장 ─────────────────────────────────────────────
     saved = save_results(
