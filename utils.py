@@ -128,7 +128,11 @@ def generate_city_recommendation(date_text: str, api_key: str, errors: list) -> 
                 return data
             raise ValueError(f"필수 키 누락 또는 도시 목록 비어있음: {data}")
         except Exception as e:
-            errors.append(f"[1/3] LLM 시도 {attempt} 실패: {e}")
+            errors.append({
+                "step": "recommendation",
+                "status": "retry",
+                "message": f"LLM 시도 {attempt} 실패: {e}",
+            })
 
     return {
         "recommended_cities": ["서울"],
@@ -155,7 +159,11 @@ def search_restaurants(city: str, api_key: str, errors: list, size: int = 5) -> 
         documents = response.json().get("documents", [])
 
         if not documents:
-            errors.append(f"[2/3] Kakao 검색 결과 0건 (city={city})")
+            errors.append({
+                "step": "restaurant",
+                "status": "empty",
+                "message": f"Kakao 검색 결과 0건 (city={city})",
+            })
             return []
 
         restaurants = []
@@ -172,7 +180,11 @@ def search_restaurants(city: str, api_key: str, errors: list, size: int = 5) -> 
         return restaurants
 
     except Exception as e:
-        errors.append(f"[2/3] Kakao API 오류 (city={city}): {e}")
+        errors.append({
+            "step": "restaurant",
+            "status": "failed",
+            "message": f"Kakao API 오류 (city={city}): {e}",
+        })
         return []
 
 
@@ -218,7 +230,6 @@ def generate_final_report(
         else:
             cities_block += "- 데이터 없음 (장소 검색 결과 0건)\n"
 
-    error_text = "\n".join(f"- {e}" for e in errors) if errors else "- 없음"
 
     prompt = f"""당신은 여행 작가입니다.
 아래 정보를 바탕으로 {date_text} 국내 여행 리포트를 Markdown 형식으로 작성해주세요.
@@ -257,7 +268,19 @@ Markdown 형식으로 작성하세요."""
         )
         return response.text
     except Exception as e:
-        errors.append(f"[3/3] 리포트 생성 실패: {e}")
+        errors.append({
+            "step": "report",
+            "status": "failed",
+            "message": f"리포트 생성 실패: {e}",
+        })
+
+        # ★ append 이후에 계산해야 리포트 실패도 오류 요약에 포함됨
+        if errors:
+            error_text = "\n".join(
+                f"- [{e2['step']}/{e2['status']}] {e2['message']}" for e2 in errors
+            )
+        else:
+            error_text = "- 없음"
 
         fallback_cities = ""
         for city in cities:
