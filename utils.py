@@ -52,7 +52,7 @@ def normalize_city_keyword(city: str) -> str:
 
 RESULTS_DIR = Path("results")
 REQUIRED_KEYS = {"recommended_cities", "weather", "events", "reason"}
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-flash-latest"
 
 _NO_AFC = types.GenerateContentConfig(
     automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
