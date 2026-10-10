@@ -2,49 +2,36 @@ import json
 import re
 import requests
 from pathlib import Path
-
+from datetime import datetime
 from google import genai
 from google.genai import types
 
-# ─── 표준 지명 매핑 ───────────────────────────────────────────
-# 다양한 도시 표현을 하나의 표준 지명으로 통일 (Kakao 검색 정확도 향상)
-CITY_ALIAS = {
-    "제주": "제주",
-    "제주도": "제주",
-    "제주특별자치도": "제주",
-    "제주시": "제주",
-    "서울": "서울",
-    "서울특별시": "서울",
-    "서울시": "서울",
-    "부산": "부산",
-    "부산광역시": "부산",
-    "부산시": "부산",
-    "강릉": "강릉",
-    "강릉시": "강릉",
-    "전주": "전주",
-    "전주시": "전주",
-    "경주": "경주",
-    "경주시": "경주",
-}
-
-
 # ─── 키워드 전처리 ───────────────────────────────────────────
+# 시/군/구 등 행정구역 접미사 제거 (광역단위 도/특별시/광역시는 그대로 둠)
+# 긴 접미사부터 검사해야 "특별자치시"가 "시"보다 먼저 매칭됨
+_CITY_SUFFIXES = ("특별자치시", "시", "군", "구")
+
+
 def normalize_city_keyword(city: str) -> str:
-    """도시명 전처리: 괄호·특수문자 제거, 공백 정리, 표준 지명 매핑.
+    """도시명 전처리: 괄호·특수문자 제거 + 시/군/구 접미사 제거.
+
+    Kakao 검색 정확도를 높이기 위한 전처리이며, 전국 모든 지명에
+    일관된 규칙을 적용한다(특정 도시 하드코딩 없음).
 
     예시:
-        "제주(제주시)" -> "제주 제주시" -> 매핑 -> "제주"
-        "전주·한옥마을" -> "전주 한옥마을"
+        "경주시"        -> "경주"
+        "제주(제주시)"   -> "제주"
+        "전주·한옥마을"  -> "전주"
+        "제주특별자치도" -> "제주특별자치도" (광역단위는 유지, Kakao가 처리)
     """
     city = re.sub(r"[\(\)\[\]·]", " ", city)   # 괄호·중점 제거
     city = re.sub(r"\s+", " ", city).strip()    # 연속 공백 정리
+    city = city.split(" ")[0]                    # 첫 단어만 사용
 
-    # 표준 지명 매핑: 전체가 별칭이면 표준명으로, 아니면 첫 단어 기준으로도 시도
-    if city in CITY_ALIAS:
-        return CITY_ALIAS[city]
-    first_word = city.split(" ")[0]
-    if first_word in CITY_ALIAS:
-        return CITY_ALIAS[first_word]
+    # 접미사 제거 (제거 후에도 글자가 남을 때만)
+    for suffix in _CITY_SUFFIXES:
+        if city.endswith(suffix) and len(city) > len(suffix):
+            return city[: -len(suffix)]
 
     return city
 # ─────────────────────────────────────────────────────────────
@@ -230,7 +217,6 @@ def generate_final_report(
         else:
             cities_block += "- 데이터 없음 (장소 검색 결과 0건)\n"
 
-
     prompt = f"""당신은 여행 작가입니다.
 아래 정보를 바탕으로 {date_text} 국내 여행 리포트를 Markdown 형식으로 작성해주세요.
 
@@ -243,13 +229,12 @@ def generate_final_report(
 {cities_block}
 
 다음 섹션을 반드시 포함해주세요:
-1. 추천 지역 (여러 도시를 함께 소개)
+1. 추천 지역 (아래 도시명을 그대로 사용: {', '.join(cities)})
 2. 추천 이유
 3. 날씨 요약
 4. 행사/축제
 5. 도시별 맛집 추천 (도시마다 소제목으로 구분, 0건이면 '데이터 없음'으로 표기)
 6. 도시별 1일 일정 제안 (각 도시별로 오전/오후/저녁 수준)
-7. 오류 요약
 
 맛집 출력 규칙(중요):
 - 각 맛집의 이름은 반드시 마크다운 링크 형식 [맛집이름](카카오맵url) 으로 작성하세요.
@@ -260,13 +245,20 @@ def generate_final_report(
 주의: 반드시 위 날짜({date_text})의 계절에 맞는 내용만 작성하세요.
 Markdown 형식으로 작성하세요."""
 
+    error_text = (
+        "\n".join(f"- {e['step']} | {e['status']} | {e['message']}" for e in errors)
+        if errors else "- 없음"
+    )
+    # 프롬프트: "1~6번만 작성, '오류 요약'은 작성 금지"로 수정
+
     try:
         response = client.models.generate_content(
             model=GEMINI_MODEL,
             contents=prompt,
             config=_NO_AFC,
         )
-        return response.text
+        return response.text.rstrip() + f"\n\n## 7. 오류 요약\n{error_text}\n"
+    
     except Exception as e:
         errors.append({
             "step": "report",
@@ -274,67 +266,48 @@ Markdown 형식으로 작성하세요."""
             "message": f"리포트 생성 실패: {e}",
         })
 
-        # ★ append 이후에 계산해야 리포트 실패도 오류 요약에 포함됨
+        # append 이후에 계산해야 리포트 실패도 오류 요약에 포함됨
         if errors:
             error_text = "\n".join(
-                f"- [{e2['step']}/{e2['status']}] {e2['message']}" for e2 in errors
+                f"- {err['step']} | {err['status']} | {err['message']}"
+                for err in errors
             )
         else:
             error_text = "- 없음"
 
-        fallback_cities = ""
-        for city in cities:
-            rlist = restaurants_by_city.get(city, [])
-            fallback_cities += f"\n### {city}\n"
-            if rlist:
-                for i, r in enumerate(rlist, 1):
-                    url = r.get("url", "")
-                    # 폴백은 코드가 직접 마크다운 링크를 조립 (LLM 미사용이라 확실함)
-                    if url:
-                        name_md = f"[{r['name']}]({url})"
-                    else:
-                        name_md = r["name"]
-                    fallback_cities += (
-                        f"{i}. {name_md}\n"
-                        f"   * 주소: {r['address']}\n"
-                        f"   * 카테고리: {r['category']}\n"
-                    )
-            else:
-                fallback_cities += "- 데이터 없음\n"
+        return f"""# {date_text} 국내 여행 리포트
 
-        schedule_block = "\n".join(
-            f"""### {c}
-- 오전: {c} 도착 및 체크인
-- 점심: 현지 맛집 방문
-- 오후: 주요 관광지 탐방
-- 저녁: 야경 감상"""
-            for c in cities
-        )
+## 1. 추천 지역
+{", ".join(cities) if cities else "정보 없음"}
 
-        fallback = f"""# {date_text} 국내 여행 리포트
+## 2. 추천 이유
+{reason or "정보 없음"}
 
-## 추천 지역
-{', '.join(cities)}
+## 3. 날씨 요약
+{weather or "정보 없음"}
 
-## 추천 이유
-{reason}
+## 4. 행사/축제
+{chr(10).join(f"- {e}" for e in events) if events else "- 없음"}
 
-## 날씨 요약
-{weather}
+## 5. 맛집 추천
+- 데이터 없음 (리포트 생성 실패로 상세 내용 생략)
 
-## 행사/축제
-{chr(10).join(f'- {ev}' for ev in events) if events else '- 정보 없음'}
+## 6. 1일 일정 제안
+- 데이터 없음 (리포트 생성 실패)
 
-## 도시별 맛집 추천
-{fallback_cities}
-
-## 도시별 1일 일정 제안
-{schedule_block}
-
-## 오류 요약
+## 7. 오류 요약
 {error_text}
 """
-        return fallback
+
+    # ─── 캐시 파일 경로 헬퍼 ──────────────────────────────────────
+def _raw_json_path(date_text: str) -> Path:
+    """원본 데이터 JSON 경로. 예: results/travel_2025-03-15.json"""
+    return RESULTS_DIR / f"travel_{date_text}.json"
+
+
+def _report_md_path(date_text: str) -> Path:
+    """리포트 Markdown 경로. 예: results/travel_2025-03-15.md"""
+    return RESULTS_DIR / f"travel_{date_text}.md"
 
 
 def save_results(
@@ -344,49 +317,50 @@ def save_results(
     report: str,
     errors: list,
 ) -> dict:
-    """JSON 원본 데이터와 Markdown 리포트를 results/ 폴더에 저장."""
-    results_dir = _ensure_results_dir()
+    """리포트(.md)와 원본 데이터(.json)를 results/ 폴더에 저장하고 경로 반환."""
+    _ensure_results_dir()
 
-    json_path = results_dir / f"travel_{date_text}.json"
-    md_path = results_dir / f"travel_{date_text}.md"
+    md_path = _report_md_path(date_text)
+    json_path = _raw_json_path(date_text)
 
+    # ① 리포트 저장 (사람이 읽는 결과물)
+    md_path.write_text(report, encoding="utf-8")
+
+    # ② 원본 데이터 저장 (캐시/재현용) — 캐시 로드 시 읽는 키와 동일하게 구성
     raw_data = {
-        "date": date_text,
+        "date_text": date_text,
         "recommendation": recommendation,
         "restaurants_by_city": restaurants_by_city,
         "errors": errors,
     }
+    json_path.write_text(
+        json.dumps(raw_data, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(raw_data, f, ensure_ascii=False, indent=2)
-
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write(report)
-
-    return {
-        "json_path": str(json_path),
-        "md_path": str(md_path),
-    }
+    # main.py가 saved['md_path'], saved['json_path']로 접근하므로 키 이름 고정
+    return {"md_path": str(md_path), "json_path": str(json_path)}
 
 
 def load_cached_raw(date_text: str) -> dict | None:
-    """같은 날짜 JSON 캐시가 있으면 로드, 없으면 None 반환."""
-    json_path = RESULTS_DIR / f"travel_{date_text}.json"
-    if json_path.exists():
-        try:
-            with open(json_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return None
-    return None
+    """같은 날짜의 원본 JSON이 있으면 dict로 반환, 없으면 None."""
+    json_path = _raw_json_path(date_text)
+    if not json_path.exists():
+        return None
+    try:
+        return json.loads(json_path.read_text(encoding="utf-8"))
+    except Exception:
+        # 손상된 캐시는 무시하고 새로 생성하도록 None 반환
+        return None
+
 
 def load_cached_report(date_text: str) -> str | None:
-    """같은 날짜 md 리포트가 있으면 문자열로 반환, 없으면 None 반환."""
-    md_path = RESULTS_DIR / f"travel_{date_text}.md"
-    if md_path.exists():
-        try:
-            with open(md_path, "r", encoding="utf-8") as f:
-                return f.read()
-        except Exception:
-            return None
-    return None
+    """같은 날짜의 리포트 md가 있으면 문자열로 반환, 없으면 None."""
+    md_path = _report_md_path(date_text)
+    if not md_path.exists():
+        return None
+    try:
+        return md_path.read_text(encoding="utf-8")
+    except Exception:
+        return None
+# ─────────────────────────────────────────────────────────────

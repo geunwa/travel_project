@@ -7,11 +7,11 @@ from dotenv import load_dotenv
 
 from utils import (
     generate_city_recommendation,
-    search_restaurants_by_cities,   # [변경] 복수 지역 검색 함수
+    search_restaurants_by_cities,
     generate_final_report,
     save_results,
     load_cached_raw,
-    load_cached_report,             # [추가] md 리포트 캐시 로드
+    load_cached_report,
 )
 
 
