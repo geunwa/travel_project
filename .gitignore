@@ -1,4 +1,8 @@
 .env
-results/
+results/*
+!results/travel_2027-05-05.*
+!results/travel_2027-08-15.*
 __pycache__/
 *.pyc
+.venv/
+venv/

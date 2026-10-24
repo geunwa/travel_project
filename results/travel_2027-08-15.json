@@ -1,0 +1,49 @@
+{
+  "date_text": "2027-08-15",
+  "recommendation": {
+    "recommended_cities": [
+      "강릉",
+      "평창",
+      "부산"
+    ],
+    "weather": "낮 기온이 30도 안팎까지 오르는 무더위와 높은 습도가 이어지며, 국지성 소나기와 열대야가 자주 나타나는 전형적인 한여름 날씨입니다.",
+    "events": [
+      "부산바다축제",
+      "강릉 경포 썸머페스티벌",
+      "통영한산대첩축제"
+    ],
+    "reason": "8월 중순은 무더위와 광복절 연휴가 맞물려 시원한 피서지를 찾는 수요가 가장 높은 시기입니다. 고원 지대에 위치한 평창은 도심보다 기온이 낮아 열대야를 피해 쾌적한 휴식을 취하기에 좋습니다. 아울러 강릉과 부산은 푸른 바다를 배경으로 해수욕과 활기찬 여름 해변 축제를 만끽하기에 최적의 여행지입니다.",
+    "recommended_city": "강릉"
+  },
+  "restaurants_by_city": {
+    "강릉": [],
+    "평창": [],
+    "부산": []
+  },
+  "errors": [
+    {
+      "step": "place_search",
+      "type": "AUTH_ERROR",
+      "status": "failed",
+      "message": "kakao 오류: 401 Client Error: Unauthorized for url: https://dapi.kakao.com/v2/local/search/keyword.json?query=%EA%B0%95%EB%A6%89+%EB%A7%9B%EC%A7%91&size=5&category_group_code=FD6",
+      "city": "강릉",
+      "query": "강릉 맛집"
+    },
+    {
+      "step": "place_search",
+      "type": "AUTH_ERROR",
+      "status": "failed",
+      "message": "kakao 오류: 401 Client Error: Unauthorized for url: https://dapi.kakao.com/v2/local/search/keyword.json?query=%ED%8F%89%EC%B0%BD+%EB%A7%9B%EC%A7%91&size=5&category_group_code=FD6",
+      "city": "평창",
+      "query": "평창 맛집"
+    },
+    {
+      "step": "place_search",
+      "type": "AUTH_ERROR",
+      "status": "failed",
+      "message": "kakao 오류: 401 Client Error: Unauthorized for url: https://dapi.kakao.com/v2/local/search/keyword.json?query=%EB%B6%80%EC%82%B0+%EB%A7%9B%EC%A7%91&size=5&category_group_code=FD6",
+      "city": "부산",
+      "query": "부산 맛집"
+    }
+  ]
+}

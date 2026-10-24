@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-RESULTS_DIR = Path("results")
+RESULTS_DIR = Path(__file__).resolve().parent / "results"
 
 
 def load_result_files():
@@ -40,7 +40,7 @@ data = load_result(selected_file)
 rec = data.get("recommendation", {})
 
 # 1) 추천 요약
-st.header(f"📆 {data.get('date', '')} 여행 추천")
+st.header(f"📆 {data.get('date_text', '')} 여행 추천")
 st.subheader("추천 도시")
 st.write(" · ".join(rec.get("recommended_cities", [])))
 
@@ -92,7 +92,10 @@ errors = data.get("errors", [])
 if errors:
     st.header("⚠️ 오류 요약")
     for e in errors:
-        st.write(f"- {e}")
+        st.write(
+            f"- {e.get('step', '')} | {e.get('type', '')} | "
+            f"{e.get('status', '')} | {e.get('message', '')}"
+        )
 else:
     st.success("오류 없이 정상 생성된 리포트입니다.")
 
