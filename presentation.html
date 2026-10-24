@@ -359,7 +359,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
     <div class="gcard rv"><div class="w">오류 코드</div><div class="m"><b>401/403</b> 키 오류 · <b>429</b> 사용량 초과 · <b>503</b> 서비스 과부하</div></div>
     <div class="gcard rv"><div class="w">CLI</div><div class="m">마우스 없이 터미널에 명령어를 입력해 실행하는 방식</div></div>
   </div>
-  <div class="ghint rv" data-dl="1.6">발표 중 언제든 <kbd>G</kbd> 키를 누르면 전체 용어 사전(22개)이 열립니다.</div>
+  <div class="ghint rv" data-dl="1.6">발표 중 언제든 <kbd>G</kbd> 키를 누르면 전체 용어 사전(26개)이 열립니다.</div>
   <template class="note">
     <p><span class="tm">약 40초</span></p>
     <ul><li>뒤 슬라이드에 계속 나오는 용어라 먼저 짚고 갑니다. 하나씩 읽기보다 GET/POST, JSON, 캐시 세 개를 강조.</li>
@@ -647,6 +647,8 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <tr><td>요청 / 응답</td><td>내가 보내는 질문 / 서비스가 돌려주는 답</td></tr>
 <tr><td>GET</td><td>&quot;조회해 줘&quot; 요청. 검색어를 주소 뒤에 붙여 보냄 (카카오 맛집 검색)</td></tr>
 <tr><td>POST</td><td>&quot;만들어 줘&quot; 요청. 긴 내용을 따로 담아 보냄 (Gemini에 프롬프트 전달)</td></tr>
+<tr><td>쿼리 파라미터</td><td>주소 끝에 ?이름=값 형태로 붙이는 조건. 예: ?query=부산 맛집&amp;size=5 (카카오 검색)</td></tr>
+<tr><td>요청 본문(body)</td><td>요청 안에 따로 담아 보내는 긴 내용. Gemini에는 프롬프트를 여기에 담음</td></tr>
 <tr><td>LLM</td><td>글을 이해하고 만들어 내는 AI. 여기서는 Gemini</td></tr>
 <tr><td>프롬프트</td><td>AI에게 주는 지시문</td></tr>
 <tr><td>JSON</td><td>데이터를 &quot;이름&quot;: 값 형태로 정리한 글 형식. 프로그램이 읽기 쉬움</td></tr>
@@ -656,6 +658,8 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 </table><table>
 <tr><td>argparse</td><td>명령어 뒤에 붙인 --date 같은 값을 읽어 주는 Python 기능</td></tr>
 <tr><td>API 키</td><td>서비스를 쓸 수 있게 해 주는 비밀번호 같은 값</td></tr>
+<tr><td>헤더(Header)</td><td>요청에 덧붙이는 부가 정보. 카카오에는 헤더에 API 키를 실어 보냄 (Authorization)</td></tr>
+<tr><td>엔드포인트</td><td>요청을 보내는 API의 구체적인 주소(URL)</td></tr>
 <tr><td>.env / 환경변수</td><td>API 키를 코드 밖에 따로 보관하는 파일 / 설정. 코드를 공유해도 키가 새지 않음</td></tr>
 <tr><td>.gitignore</td><td>GitHub에 올리지 않을 파일 목록. .env를 여기에 넣어 둠</td></tr>
 <tr><td>캐시</td><td>한 번 받은 결과를 저장해 두었다가, 같은 요청이면 다시 묻지 않고 꺼내 쓰는 것</td></tr>
