@@ -199,6 +199,7 @@ def generate_city_recommendation(date_text: str, api_key: str, errors: list) -> 
     last_type = "UNKNOWN_ERROR"
     for attempt, p in enumerate([prompt, strict_prompt], start=1):
         try:
+            # Gemini 호출은 POST: 긴 프롬프트를 요청 본문에 담아 새 결과 생성을 요청한다(SDK가 내부에서 POST 전송).
             response = client.models.generate_content(
                 model=GEMINI_MODEL, contents=p, config=_NO_AFC
             )
@@ -262,6 +263,7 @@ class KakaoLocalProvider(PlaceSearchProvider):
 
     def search(self, keyword: str, size: int) -> list[dict]:
         params = {"query": keyword, "size": size, "category_group_code": "FD6"}
+        # Kakao 호출은 GET: 기존 데이터를 조회하고, 짧은 검색 조건은 URL 쿼리(params)로 전달한다. 키는 URL이 아니라 헤더로 보낸다.
         response = requests.get(self.URL, headers=self._headers, params=params, timeout=10)
         response.raise_for_status()
         documents = response.json().get("documents", [])
@@ -441,6 +443,7 @@ def generate_final_report(
 
     for attempt in (1, 2):
         try:
+            # Gemini 호출은 POST: 긴 프롬프트를 요청 본문에 담아 새 결과 생성을 요청한다(SDK가 내부에서 POST 전송).
             response = client.models.generate_content(
                 model=GEMINI_MODEL, contents=prompt, config=_NO_AFC
             )

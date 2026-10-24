@@ -19,13 +19,14 @@ from utils import (
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """CLI 인자 정의: --date 필수"""
+    """CLI 인자 정의: --date 필수 (과제 원문 표기인 -date도 같은 옵션으로 허용)"""
     parser = argparse.ArgumentParser(
         prog="main.py",
         description="Gemini + Kakao 국내 여행 추천 프로그램 (복수 지역)",
     )
     parser.add_argument(
-        "--date",
+        "--date", "-date",
+        dest="date",
         required=True,
         help='여행 날짜 (형식: YYYY-MM-DD, 예: --date "2026-12-31")',
     )

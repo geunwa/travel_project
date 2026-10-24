@@ -96,7 +96,7 @@ python main.py --date "2026-12-31"
 
 | 요구 사항 | 구현 내용 |
 |---|---|
-| **CLI (argparse)** | `main.py`에서 `--date` 필수 옵션 파싱 |
+| **CLI (argparse)** | `main.py`에서 `--date` 필수 옵션 파싱 (과제 원문 표기 `-date`도 같은 옵션으로 동작) |
 | **날짜 형식 검증** | 정규식(`YYYY-MM-DD`, 월·일 두 자리) + 실제 날짜 검사. 실패 시 사용법 출력 후 종료(코드 1) |
 | **LLM API (택1)** | ✅ **Google Gemini** (`gemini-flash-latest`) |
 | **지도 API (택1)** | ✅ **Kakao Local** (키워드 검색 + 음식점 카테고리 `FD6`), `PlaceSearchProvider` 인터페이스로 교체 가능 |
