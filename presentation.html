@@ -241,6 +241,14 @@ h2 small{font-size:30px;font-weight:500;color:var(--muted);margin-left:14px;lett
 .exp{margin-top:6px;padding:18px 26px;border-radius:20px;border:1px dashed rgba(196,181,253,.5);background:rgba(196,181,253,.07);font-size:23px;line-height:1.5;color:#ddd6fe}
 .exp b{color:#ede9fe}
 
+
+/* ---------- 발표 보조: 슬라이드 핵심 한 줄 / 말할 순서 ---------- */
+.say{position:absolute;right:70px;top:44px;max-width:1000px;font:700 27px var(--sans,inherit);color:#fcd34d;background:rgba(252,211,77,.09);
+  border:1.5px solid rgba(252,211,77,.5);padding:9px 22px;border-radius:999px;white-space:nowrap}
+.say.act{color:#031019;background:var(--cyan);border-color:var(--cyan)}
+#nbody .ord{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.45);border-radius:14px;padding:10px 16px;margin:6px 0 12px}
+#nbody .ord b{color:var(--cyan)}
+
 /* ---------- 용어 사전 패널 (G 키) ---------- */
 #gloss{position:absolute;left:60px;top:40px;width:1800px;max-height:900px;overflow:auto;z-index:55;background:rgba(5,10,20,.97);border:1px solid #2a5f93;border-radius:22px;
   padding:24px 32px;box-shadow:0 30px 80px rgba(0,0,0,.7);display:none}
@@ -308,6 +316,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
     <div class="hint rv">← → 키 또는 하단 버튼으로 이동 · G 용어 사전 · S 발표자 메모</div>
   </div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · "안녕하세요" → 한 줄 소개(날짜→추천→맛집→리포트) → "요구사항 설명 뒤 시연"</div>
     <p><span class="tm">약 20초</span></p>
     <ul><li>인사 후 한 줄 소개: 날짜를 입력하면 Gemini가 여행지를 추천하고, Kakao로 맛집을 찾아 리포트를 만드는 프로그램입니다.</li>
     <li>평가 포인트 예고: 과제 요구사항 충족 여부 + 실제 시연.</li></ul>
@@ -317,6 +326,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <!-- ================= 2. 과제 소개 + 데이터 흐름 ================= -->
 <section class="slide s2" data-title="과제 소개 · 데이터 흐름">
   <div class="kick rv">02 · 과제 소개</div>
+  <div class="say rv" data-dl="0.4">▸ 앞 단계의 출력 = 다음 단계의 입력</div>
   <h2 class="rv">날짜 하나로 <span class="circle fx" data-dl="1.0">여러 API</span>를 엮습니다</h2>
   <div class="flow">
     <div class="node rv" data-dl="0.3"><div class="tag">INPUT</div><b>날짜 입력</b><span class="d"><span class="ic">--date "YYYY-MM-DD"</span></span></div>
@@ -337,6 +347,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
   </div>
   <div class="banner rv" data-dl="5.7">핵심: 앞 단계의 <span class="mark fx" data-dl="6.1">출력이 다음 단계의 입력</span>이 된다</div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · 날짜 → ① Gemini 추천 → ② 카카오 맛집 → ③ Gemini 리포트 → 저장 → <b>출력이 다음 입력</b></div>
     <p><span class="tm">약 35초</span></p>
     <ul><li>왼쪽에서 오른쪽으로 짚기: 날짜 → ① Gemini 추천(JSON) → ② Kakao 맛집 검색 → ③ Gemini 최종 리포트 → JSON+MD 저장.</li>
     <li>점선 칩이 단계 사이에 넘어가는 데이터: 추천 도시 목록이 검색 입력이 되고, 도시별 맛집이 리포트 입력이 됩니다.</li>
@@ -348,6 +359,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <!-- ================= 3. 용어 정리 ================= -->
 <section class="slide sg" data-title="용어 정리">
   <div class="kick rv">03 · 용어 정리</div>
+  <div class="say rv" data-dl="0.4">▸ GET · JSON · 캐시, 세 개만 기억</div>
   <h2 class="rv">발표에 나오는 <span class="mark fx" data-dl="0.8">용어 8개</span>, 먼저 쉽게 정리합니다</h2>
   <div class="gl">
     <div class="gcard rv"><div class="w">API</div><div class="m">다른 서비스에 일을 부탁하는 정해진 창구<span class="ex">Gemini에는 글 생성, 카카오에는 장소 검색을 부탁</span></div></div>
@@ -361,6 +373,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
   </div>
   <div class="ghint rv" data-dl="1.6">발표 중 언제든 <kbd>G</kbd> 키를 누르면 전체 용어 사전(26개)이 열립니다.</div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · API=창구 → GET 조회 / POST 만들어 줘 → JSON → 캐시 → "모르는 용어는 G 키"</div>
     <p><span class="tm">약 40초</span></p>
     <ul><li>뒤 슬라이드에 계속 나오는 용어라 먼저 짚고 갑니다. 하나씩 읽기보다 GET/POST, JSON, 캐시 세 개를 강조.</li>
     <li>예시로 연결: "카카오 맛집 검색은 GET, Gemini에 지시문을 보내는 건 POST입니다."</li>
@@ -371,6 +384,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <!-- ================= 4. 요구사항 충족 ① 목표 ================= -->
 <section class="slide s3" data-title="요구사항 충족 ① 목표">
   <div class="kick rv">04 · 과제 요구사항 충족 ① 목표</div>
+  <div class="say rv" data-dl="0.4">▸ 목표 4개: 요청 방식 · JSON · 오류 · 키 관리</div>
   <h2 class="rv">과제 목표 4가지, 코드로 보여줍니다</h2>
   <div class="grid2">
     <div class="card rv"><h3><span class="no">1</span>GET / POST 차이</h3>
@@ -402,6 +416,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
     </div>
   </div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · ① GET/POST(주소 뒤 vs 본문) ② JSON → 도시 목록 ③ 오류 구분 ④ 키는 .env</div>
     <p><span class="tm">약 35초</span></p>
     <ul><li>GET/POST: 프롬프트처럼 크고 생성성 요청은 POST(본문), 검색어 조회는 GET(쿼리). Gemini의 POST는 SDK 내부 REST 요청이라 코드에는 안 보인다고 한 줄 덧붙이기.</li>
     <li>JSON 구조화: 추천 결과를 JSON으로 받아야 도시 목록을 바로 검색에 넘길 수 있습니다.</li>
@@ -415,6 +430,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <!-- ================= 5. 요구사항 충족 ② 체크리스트 ================= -->
 <section class="slide s4" data-title="요구사항 충족 ② 체크리스트">
   <div class="kick rv">05 · 과제 요구사항 충족 ② 기능 체크리스트</div>
+  <div class="say rv" data-dl="0.4">▸ 핵심 3개: 날짜 검증 · 0건 처리 · 재시도 1회</div>
   <h2 class="rv">기능 요구사항 <span class="mark fx" data-dl="0.8">모두 구현</span></h2>
   <div class="ckgrid">
     <div class="ck"><span class="stamp" data-dl="0.7">✅</span><div class="tx rv" data-dl="0.7"><b>CLI (argparse)</b> · <span class="ic">--date</span> 필수 옵션</div></div>
@@ -429,6 +445,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
   </div>
   <div class="foot rv" data-dl="5.0">※ 모델명은 코드(<span class="ic">utils.py</span>의 <span class="ic">GEMINI_MODEL</span>) 기준입니다.</div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · 날짜 검증 → 검색 0건 처리 → 파싱 재시도 1회 → 나머지는 "모두 구현"</div>
     <p><span class="tm">약 35초</span></p>
     <ul><li>체크 표시가 하나씩 찍히는 동안 항목을 전부 읽지 말고 핵심 3개만 강조: 날짜 검증, 검색 0건 처리, 파싱 재시도 1회.</li>
     <li>1차 JSON은 과제 필수 키 recommended_city(대표 도시)와 보너스 recommended_cities(2~3곳)를 함께 저장합니다.</li>
@@ -440,6 +457,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <!-- ================= 6. 보너스 + 보안 ================= -->
 <section class="slide s5" data-title="보너스 · 보안">
   <div class="kick rv">06 · 보너스 + 보안</div>
+  <div class="say rv" data-dl="0.4">▸ 보너스 2개 + 키는 .env에</div>
   <h2 class="rv">보너스 2개, 보안 4가지</h2>
   <div class="cols">
     <div class="stack">
@@ -460,6 +478,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
     </div>
   </div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · 복수 지역 → 캐싱(뒤에서 시연) → 보안(.env · .gitignore · 예시 파일) → 경험 한 줄 → "시연 시작"</div>
     <p><span class="tm">약 30초</span></p>
     <ul><li>보너스는 과제가 제시한 2개(복수 지역, 캐싱)를 모두 구현했습니다.</li>
     <li><b>쉽게 말하면</b>: 복수 지역 = 도시를 2~3곳 추천받아 도시마다 맛집 검색. 캐싱 = 같은 날짜를 다시 실행하면 저장된 결과를 꺼내 써서 AI·카카오에 다시 묻지 않음(시간·비용 절약).</li>
@@ -473,6 +492,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <!-- ================= 7. 사전평가 이후 개선 ================= -->
 <section class="slide si" data-title="사전평가 이후 개선">
   <div class="kick rv">07 · 사전평가 피드백 반영</div>
+  <div class="say rv" data-dl="0.4">▸ 피드백 4개: 도시명 · 오류 · 교체 · 실패 보존</div>
   <h2 class="rv">사전평가 이후 <span class="mark fx" data-dl="0.8">이렇게 고쳤습니다</span></h2>
   <div class="grid2">
     <div class="card rv"><h3><span class="no">1</span>도시명 키워드 정규화<span class="fb">FEEDBACK</span></h3>
@@ -494,6 +514,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
     </div>
   </div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · 대구→대 문제 → 오류 6유형 → 교체 가능 구조 → 실패해도 맛집 유지</div>
     <p><span class="tm">약 30초</span></p>
     <ul><li>사전평가에서 지적받은 항목(도시명 정규화, 401/403 대응, 지도 교체 설계)을 코드로 고쳤다고 한 줄로 소개.</li>
     <li>1번: 예전 규칙은 '대구'를 '대'로 잘라 엉뚱한 검색어가 됐습니다. 지금은 2글자 이상 남을 때만 접미사를 뗍니다.</li>
@@ -508,6 +529,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <!-- ================= 8. 시연 ① ================= -->
 <section class="slide s6" data-title="시연 ① 실시간 실행">
   <div class="kick rv">08 · 시연 ① 실시간 실행</div>
+  <div class="say act rv" data-dl="0.4">▸ C → Alt+Tab → 붙여넣기 → Enter</div>
   <h2 class="rv">날짜만 넣으면 <span class="circle fx" data-dl="1.0">3단계</span>가 순서대로 실행됩니다</h2>
   <div class="cols">
     <div class="steps">
@@ -527,6 +549,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
     </div>
   </div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · 날짜 입력 → [1/3] 추천 → [2/3] 맛집 → [3/3] 리포트 → results 의 MD 열기</div>
     <p><span class="tm">약 70초 (시연)</span></p>
     <h4>시연 전 준비</h4>
     <ul><li>VS Code 터미널 위치가 <b>travel_project</b>, <b>(.venv)</b> 표시 확인</li>
@@ -550,6 +573,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <!-- ================= 9. 시연 ② ================= -->
 <section class="slide s7 t7" data-title="시연 ② 캐싱 · 에러 검증">
   <div class="kick rv">09 · 시연 ② 캐싱 + 에러 검증</div>
+  <div class="say act rv" data-dl="0.4">▸ 1 키(캐시) → 2 키(잘못된 날짜)</div>
   <h2 class="rv">재실행은 <span class="invert fx" data-dl="0.9">(캐시)</span>, 잘못된 입력은 안내 후 종료</h2>
   <div class="cols">
     <div>
@@ -572,6 +596,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
     </div>
   </div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · 재실행 = (캐시), API 0회 → 잘못된 날짜 → 안내 후 종료(코드 1)</div>
     <p><span class="tm">약 50초 (시연)</span></p>
     <h4>시연 순서</h4>
     <ol><li>8번 시연이 끝난 상태에서 같은 명령을 다시 실행 (복사 버튼 또는 <b>1</b> 키)</li>
@@ -588,6 +613,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
 <!-- ================= 10. 결과물 + 마무리 ================= -->
 <section class="slide s8" data-title="결과물 · 마무리">
   <div class="kick rv">10 · 결과물 + 마무리</div>
+  <div class="say rv" data-dl="0.4">▸ JSON = 기계용 · MD = 사람용</div>
   <h2 class="rv">JSON 원본 + Markdown 리포트가 <span class="mark fx" data-dl="1.0">자동 저장</span>됩니다</h2>
   <div class="cols">
     <div class="codebox rv"><span class="tc">// results/travel_2027-05-05.json (저장소 샘플, 일부 생략)</span>
@@ -620,6 +646,7 @@ noscript{position:fixed;inset:0;display:grid;place-items:center;background:#0509
   </div>
   <div class="thanks rv" data-dl="2.9"><b>감사합니다</b><a href="https://github.com/geunwa/travel_project" target="_blank" rel="noopener">github.com/geunwa/travel_project</a></div>
   <template class="note">
+    <div class="ord"><b>말할 순서</b> · JSON=프로그램용 / MD=사람용 → errors [] = 오류 없음 → 기술 스택 → 감사 → 질문</div>
     <p><span class="tm">약 25초</span></p>
     <ul><li>JSON 구조: date_text / recommendation / restaurants_by_city / errors. 오류가 없으면 errors는 빈 리스트이고, 401 샘플에는 AUTH_ERROR가 기록됩니다.</li>
     <li>Markdown 리포트에 들어가는 항목과 오류 요약 섹션.</li>
