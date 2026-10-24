@@ -2,7 +2,7 @@
 
 특정 날짜를 입력하면 Gemini(LLM)가 해당 시기에 적합한 국내 여행지를 추천하고,
 Kakao Local API로 도시별 맛집 정보를 수집한 뒤, 다시 Gemini로 최종 여행 리포트를 생성하는 CLI 프로그램이다.
-결과는 `results/` 폴더에 원본 데이터(JSON)와 리포트(Markdown)로 저장되며, Streamlit 웹 화면으로도 확인할 수 있다.
+결과는 `results/` 폴더에 원본 데이터(JSON)와 리포트(Markdown)로 저장된다.
 
 ```
 --date 입력 → [1/3] Gemini 1차 추천(JSON) → [2/3] Kakao 맛집 검색(도시별) → [3/3] Gemini 최종 리포트(Markdown) → results/ 저장
@@ -18,7 +18,6 @@ Kakao Local API로 도시별 맛집 정보를 수집한 뒤, 다시 Gemini로 �
 - 도시명 키워드 정규화 (`normalize_city_keyword`)
 - 결과 저장: 원본 JSON + Markdown 리포트
 - 오류 유형 분류 및 오류 요약 (JSON `errors`, 리포트 '7. 오류 요약')
-- Streamlit 웹 GUI (선택)
 
 ## 보너스 구현 사항
 
@@ -33,7 +32,6 @@ Kakao Local API로 도시별 맛집 정보를 수집한 뒤, 다시 Gemini로 �
 travel_project/
 ├── main.py              # CLI 진입점 (인자 파싱·날짜 검증·키 확인·실행 흐름·콘솔 로그)
 ├── utils.py             # 추천/검색/리포트 생성/오류 분류/저장/캐싱 로직
-├── app.py               # Streamlit 웹 GUI (선택)
 ├── list_models.py       # (보조) 사용 가능한 Gemini 모델 목록 확인용
 ├── results/             # 실행 결과 저장 폴더
 │   ├── travel_YYYY-MM-DD.json
@@ -50,7 +48,7 @@ travel_project/
 
 - Python 3.10 이상 (Python 3.14.7에서 실행 확인)
 - Gemini 모델: `gemini-flash-latest` (`utils.py`의 `GEMINI_MODEL`)
-- 라이브러리: google-genai, requests, python-dotenv, streamlit, pandas
+- 라이브러리: google-genai, requests, python-dotenv
 
 ## 설치 방법
 
@@ -136,16 +134,6 @@ python main.py --date "2027-05-05"
 
 - 같은 날짜로 다시 실행하면 파일을 덮어쓴다.
 - 저장소에는 샘플로 `travel_2027-05-05.*`(정상 실행)와 `travel_2027-08-15.*`(Kakao 인증 실패 재현)가 포함되어 있다.
-
-### 3. 웹 GUI 실행 (선택)
-
-```bash
-streamlit run app.py
-```
-
-- 브라우저에서 `localhost:8501`로 접속한다.
-- 사이드바에서 날짜를 고르면 해당 날짜의 결과(JSON 기준)를 보여준다: 추천 요약, 도시별 맛집 목록, 지도, 카카오맵 링크, 오류 요약.
-- GUI는 저장된 결과를 보여주는 화면이며, API를 호출하지 않는다. 새 날짜는 먼저 CLI로 실행한다.
 
 ## 데이터 구조
 
@@ -353,3 +341,7 @@ Remove-Item results\travel_2027-05-05.json, results\travel_2027-05-05.md
 - 오류 메시지에는 요청 URL(검색어)이 남을 수 있지만, Kakao 키는 헤더로만 전송되므로 기록되지 않는다.
 - 무료 API 쿼터에 유의한다. 캐싱으로 같은 날짜의 중복 호출을 막는다.
 - 커밋 전 점검: `git status`에 `.env`가 보이지 않는지, `git log --all --oneline -- .env` 출력이 비어 있는지 확인한다.
+
+## 참고
+
+- 다른 분의 과제를 보고 화면(그래픽) 구현도 해 보았으나, 과제 요구 범위가 아니어서 제출물에서는 제외했다.

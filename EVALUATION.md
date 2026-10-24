@@ -9,6 +9,24 @@ cd travel_project
 .\.venv\Scripts\Activate.ps1
 ```
 
+### 시연 직전 점검 목록
+
+| 점검 | 확인 방법 |
+|---|---|
+| 최신 코드가 GitHub에 올라가 있는지 | `git status` 깨끗함, `git log --oneline -1`이 `origin/main`과 같은지 |
+| 가상환경 활성화 | 프롬프트 앞에 `(.venv)` 표시 |
+| 시연 날짜 캐시 없음 | `results\travel_2026-12-31.*` 파일이 없어야 함 (있으면 삭제) |
+| 인터넷 연결 · API 응답 | 다른 날짜로 1회 사전 실행 후 결과 삭제: `python main.py --date "2027-03-01"` → `Remove-Item results\travel_2027-03-01.*` |
+| `.env`는 화면에 열지 않음 | VS Code 탭에서 닫아 두기 |
+
+### API 장애 시 예비 방안
+
+| 상황 | 대응 |
+|---|---|
+| Gemini 503(과부하) | 자동 1회 재시도 → 실패 시 맛집을 유지한 기본 리포트 생성. 오류 요약의 `SERVER_ERROR`를 오류 처리 시연으로 활용 |
+| 실시간 실행 실패로 캐시 시연 불가 (`failed` 기록) | 저장소 샘플로 캐시 시연: `python main.py --date "2027-05-05"` (오류 없이 저장된 샘플이라 항상 `(캐시)`) |
+| 네트워크 단절 | 발표 자료의 예비 화면(터미널 재생)과 저장소 샘플 `results/travel_2027-05-05.*`, `travel_2027-08-15.*`로 설명 |
+
 ---
 
 ## 1. 과제 소개
@@ -141,7 +159,6 @@ Remove-Item Env:KAKAO_REST_API_KEY
 |---|:---:|---|
 | **복수 지역 추천** | ✅ | `recommended_cities`로 2~3개 도시 추천 → 도시별 맛집 검색(루프) → 리포트에 도시별 정리 |
 | **결과 캐싱** | ✅ | 같은 `--date` 재실행 시 저장된 JSON·MD가 있으면 **모든 API 호출을 생략**. 실패(`failed`) 기록이 있으면 캐시를 쓰지 않음 |
-| **(개인) Streamlit 웹 GUI** | ✅ | `streamlit run app.py` — 날짜별 추천 결과·맛집 목록·지도·카카오맵 링크·오류 요약 표시 |
 
 ### 캐싱 시연
 
@@ -165,12 +182,6 @@ python main.py --date "2026-12-31"
 
 → 모든 단계가 `(캐시)`로 표시되며, **Gemini·Kakao API를 한 번도 호출하지 않습니다.**
 (JSON만 있고 MD가 없으면 [3/3] 리포트만 Gemini로 새로 생성합니다. 첫 실행에 `failed`가 기록됐다면 "[캐시] 이전 실행에 실패 기록이 있어..." 안내 후 다시 호출합니다.)
-
-### 웹 GUI 시연 (선택, 브라우저 열림)
-
-```powershell
-streamlit run app.py
-```
 
 ---
 

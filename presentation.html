@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>국내 여행 추천 프로그램 · 발표</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050912; --panel:#0d1830; --panel2:#11213f; --line:#1f3558;
+  --text:#e8f0fc; --muted:#90a5c8; --dim:#5f7396;
+  --cyan:#22d3ee; --teal:#2dd4bf; --blue:#60a5fa; --blue2:#3b82f6;
+  --amber:#fbbf24; --green:#34d399; --red:#f87171; --violet:#c4b5fd;
+  --mono:"JetBrains Mono","D2Coding","Cascadia Mono",Consolas,"Malgun Gothic",monospace;
+  --sans:"Noto Sans KR","Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#03060c;overflow:hidden;font-family:var(--sans);color:var(--text);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+a{color:inherit}
+
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center;overflow:hidden;
+  background:
+    radial-gradient(1100px 640px at 88% -8%,rgba(34,211,238,.15),transparent 60%),
+    radial-gradient(900px 620px at -6% 108%,rgba(59,130,246,.17),transparent 60%),
+    linear-gradient(180deg,#070d1b,#050912)}
+#stage::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(96,165,250,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(96,165,250,.05) 1px,transparent 1px);
+  background-size:64px 64px;-webkit-mask-image:radial-gradient(ellipse at 50% 38%,#000 25%,transparent 78%);mask-image:radial-gradient(ellipse at 50% 38%,#000 25%,transparent 78%)}
+
+/* ---------- slide base ---------- */
+.slide{position:absolute;inset:0;padding:60px 120px 150px;word-break:keep-all;overflow-wrap:break-word;visibility:hidden;opacity:0;transform:translateX(70px);
+  transition:opacity .55s ease,transform .6s cubic-bezier(.2,.7,.2,1),visibility 0s linear .6s}
+.slide.past{transform:translateX(-70px)}
+.slide.active{visibility:visible;opacity:1;transform:none;transition-delay:0s}
+.kick{font:700 24px var(--mono);color:var(--cyan);letter-spacing:.16em}
+h2{font-size:58px;font-weight:900;letter-spacing:-.02em;line-height:1.18;margin:8px 0 26px}
+h2 small{font-size:30px;font-weight:500;color:var(--muted);margin-left:14px;letter-spacing:0}
+.muted{color:var(--muted)}
+.ic{font:500 .82em var(--mono);background:rgba(96,165,250,.14);color:#bcd6ff;padding:.08em .4em;border-radius:8px;white-space:nowrap}
+
+/* ---------- reveal ---------- */
+.rv{opacity:0}
+.rv.go{animation:rv .75s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--dl,0s)}
+@keyframes rv{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+/* ---------- 강조 효과 (동그라미 · 형광펜 · 색 반전) ---------- */
+.mark{background:linear-gradient(transparent 56%,rgba(34,211,238,.40) 56%,rgba(34,211,238,.40) 95%,transparent 95%) no-repeat 0 0/0% 100%;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;padding:0 .1em}
+.mark.go{animation:mk .9s ease both;animation-delay:var(--dl,0s)}
+@keyframes mk{to{background-size:100% 100%}}
+.circle{display:inline-block;position:relative;padding:0 .12em;margin:0 .42em}
+.circle svg{position:absolute;pointer-events:none;overflow:visible}
+.circle path{fill:none;stroke:var(--amber);stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;
+  filter:drop-shadow(0 0 7px rgba(251,191,36,.5))}
+.circle.go path{animation:draw 1s cubic-bezier(.5,0,.25,1) both;animation-delay:var(--dl,0s)}
+@keyframes draw{to{stroke-dashoffset:0}}
+.invert{display:inline-block;padding:0 .35em;border-radius:.28em}
+.invert.go{animation:inv .5s ease both;animation-delay:var(--dl,0s)}
+@keyframes inv{to{background:var(--cyan);color:#031019}}
+
+/* ---------- 코드 · syntax ---------- */
+.code,.cmd code,.term-body{font-family:var(--mono)}
+.tk{color:#7dd3fc}      /* key */
+.ts{color:#86efac}      /* string */
+.tn{color:#fcd34d}      /* number */
+.tc{color:#5f7396}      /* comment */
+.tf{color:#22d3ee}      /* flag */
+.tp{color:#2dd4bf}      /* prompt */
+.tm{color:var(--violet)}/* command */
+.tb{color:#fda4af}      /* bool/null */
+
+.cmd{display:flex;align-items:center;gap:22px;background:#06101f;border:1.5px solid #25507a;border-radius:20px;padding:20px 24px 20px 30px;
+  box-shadow:0 0 0 1px rgba(34,211,238,.08),0 14px 40px rgba(0,0,0,.45)}
+.cmd code{flex:1;font-size:34px;font-weight:500;white-space:pre;overflow:hidden}
+.cmd.sm code{font-size:26px}
+.cmd .copybtn{flex:none;display:flex;align-items:center;gap:10px;padding:14px 26px;border-radius:14px;font-weight:700;font-size:24px;
+  background:linear-gradient(135deg,var(--blue2),var(--cyan));color:#021019;box-shadow:0 6px 20px rgba(34,211,238,.28);transition:transform .15s,filter .15s}
+.cmd .copybtn:hover{transform:translateY(-2px);filter:brightness(1.08)}
+.cmd .copybtn:active{transform:scale(.97)}
+.cmd .copybtn.ok{background:linear-gradient(135deg,#10b981,#34d399)}
+.keyhint{font:500 18px var(--mono);color:var(--dim);margin-top:10px}
+
+/* ---------- terminal ---------- */
+.term{background:#040913;border:1px solid #1d3257;border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.term-bar{display:flex;align-items:center;gap:12px;padding:15px 22px;background:#0b162c;border-bottom:1px solid #1d3257}
+.term-bar .d{width:17px;height:17px;border-radius:50%}
+.d.r{background:#ff5f57}.d.y{background:#febc2e}.d.g{background:#28c840}
+.term-title{font:500 19px var(--mono);color:var(--muted);margin-left:10px}
+.badge{margin-left:auto;font:700 16px var(--mono);color:#fcd34d;border:1px solid rgba(252,211,77,.4);padding:4px 12px;border-radius:999px}
+.replay{font:700 17px var(--mono);color:var(--cyan);border:1px solid rgba(34,211,238,.4);padding:5px 14px;border-radius:999px}
+.replay:hover{background:rgba(34,211,238,.12)}
+.term-body{padding:22px 30px 24px;font-size:24px;line-height:1.6;font-weight:500;white-space:pre;color:#d6e4fb}
+.term-body .ln{display:block;min-height:1.6em}
+.typed .ch{visibility:hidden}
+.typed .ch.v{visibility:visible}
+.caret{display:inline-block;width:.6em;height:1.15em;vertical-align:-.2em;background:var(--cyan);animation:blink 1s steps(1) infinite;margin-left:1px}
+.caret.off{display:none}
+@keyframes blink{50%{opacity:0}}
+.out{visibility:hidden;opacity:0}
+.out.on{visibility:visible;opacity:1;animation:lnin .35s ease both}
+@keyframes lnin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.ok-c{color:var(--green)}.dim-c{color:#7186a8}.err-c{color:var(--red)}.hi-c{color:var(--cyan)}.am-c{color:var(--amber)}
+.t7 .term-body{font-size:21px;min-height:300px}.term-body .circle{margin:0 .75em}
+
+/* ---------- cards ---------- */
+.card{background:linear-gradient(160deg,rgba(21,38,70,.92),rgba(11,22,44,.92));border:1px solid var(--line);border-radius:26px;padding:30px 34px;
+  box-shadow:0 16px 50px rgba(0,0,0,.35)}
+.card h3{font-size:32px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:14px}
+.card h3 .no{font:700 22px var(--mono);color:#031019;background:var(--cyan);width:42px;height:42px;border-radius:12px;display:grid;place-items:center}
+.card p,.card li{font-size:26px;line-height:1.55;color:#cfdcf2}
+.card ul{list-style:none;display:grid;gap:8px}
+.card li::before{content:"▸";color:var(--cyan);margin-right:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+
+/* ---------- slide 1 ---------- */
+.s1 .hero{position:absolute;left:120px;top:210px;width:1000px}
+.s1 h1{font-size:112px;line-height:1.08;font-weight:900;letter-spacing:-.035em;margin:20px 0 34px;
+  background:linear-gradient(100deg,#fff 10%,#9ee9f7 55%,#7fb3ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.s1 .sub{font-size:42px;line-height:1.45;font-weight:500;color:#cde0ff}
+.s1 .gh{display:inline-flex;margin-top:56px;font:500 28px var(--mono);color:var(--cyan);text-decoration:none;border:1px solid rgba(34,211,238,.45);padding:16px 28px;border-radius:16px;background:rgba(34,211,238,.06)}
+.s1 .gh:hover{background:rgba(34,211,238,.14)}
+.s1 .hint{margin-top:34px;font:500 22px var(--mono);color:var(--dim)}
+.route{position:absolute;right:60px;top:90px;width:760px;height:760px}
+.route .line{fill:none;stroke:url(#rg);stroke-width:5;stroke-dasharray:14 16;stroke-linecap:round}
+.route .pin{opacity:0;transform-box:fill-box;transform-origin:center bottom}
+.route.go .pin{animation:pin .6s cubic-bezier(.2,1.5,.4,1) both;animation-delay:var(--pd)}
+@keyframes pin{from{opacity:0;transform:translateY(-30px) scale(.4)}to{opacity:1;transform:none}}
+.route .reveal-mask{stroke-dasharray:2400;stroke-dashoffset:2400}
+.route.go .reveal-mask{animation:draw2 2.6s ease .5s both}
+@keyframes draw2{to{stroke-dashoffset:0}}
+
+/* ---------- slide 2 flow ---------- */
+.flow{position:relative;display:flex;align-items:stretch;height:300px;margin-top:56px}
+.node{width:280px;flex:none;border-radius:26px;padding:28px 24px;border:1px solid var(--line);background:linear-gradient(165deg,#12254a,#0b1730)}
+.node .tag{font:700 18px var(--mono);color:var(--cyan);letter-spacing:.12em}
+.node b{display:block;font-size:38px;line-height:1.25;margin:14px 0 16px}
+.node span.d{display:block;font-size:25px;line-height:1.45;color:var(--muted)}.node .ic{font-size:.8em}
+.node.api{border-color:#2a5f93;background:linear-gradient(165deg,#133663,#0c1c3a)}
+.node.save{border-color:#1d7a6e;background:linear-gradient(165deg,#0f3b45,#0b2230)}
+.arr{width:70px;flex:none;align-self:center;height:30px;position:relative}
+.arr i{position:absolute;left:0;top:13px;width:56px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--blue2),var(--cyan));transform-origin:left;transform:scaleX(0)}
+.arr::after{content:"";position:absolute;right:6px;top:7px;border-left:14px solid var(--cyan);border-top:8px solid transparent;border-bottom:8px solid transparent;opacity:0}
+.arr.go i{animation:grow .5s ease both;animation-delay:var(--dl,0s)}
+.arr.go::after{animation:fadein .3s ease both;animation-delay:calc(var(--dl,0s) + .4s)}
+@keyframes grow{to{transform:scaleX(1)}}
+@keyframes fadein{to{opacity:1}}
+.chips{position:relative;height:60px;margin-top:30px}
+.chipx{position:absolute;top:0;width:300px;text-align:center;font:500 22px var(--mono);white-space:nowrap;color:#a5f3fc;background:rgba(34,211,238,.09);border:1px dashed rgba(34,211,238,.5);border-radius:12px;padding:10px 0}
+.banner{margin-top:70px;font-size:52px;font-weight:700;text-align:center;line-height:1.5}
+
+/* ---------- slide 3 ---------- */
+.s3 .grid2{gap:26px}
+.s3 .card{min-height:330px}
+.mini{width:100%;border-collapse:collapse;margin-top:6px;font-size:25px}
+.mini th{color:var(--muted);font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-size:21px}
+.mini td{padding:12px 10px;border-bottom:1px solid rgba(31,53,88,.6);vertical-align:top}
+.mini td:first-child{font-weight:700;white-space:nowrap}
+.verb{font:700 30px var(--mono)}
+.verb.post{color:#fda4af}.verb.get{color:var(--green)}
+.flowmini{display:flex;flex-direction:column;gap:10px;font-size:25px}
+.flowmini .st{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.28);border-radius:14px;padding:10px 16px}
+.flowmini .dn{color:var(--cyan);text-align:center;line-height:.7;font-size:22px}
+.pills{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 12px}
+.pill{font-size:23px;font-weight:700;padding:6px 18px;border-radius:999px;background:rgba(251,191,36,.12);color:#fde68a;border:1px solid rgba(251,191,36,.4)}
+
+/* ---------- slide 4 checklist ---------- */
+.ckgrid{display:grid;grid-template-columns:1fr 1fr;column-gap:56px;row-gap:14px;margin-top:6px}
+.ck{display:flex;align-items:flex-start;gap:20px;padding:14px 22px;border-radius:18px;background:rgba(17,33,63,.72);border:1px solid var(--line);min-height:96px}
+.stamp{flex:none;font-size:44px;line-height:1;opacity:0;margin-top:2px}
+.stamp.go{animation:stamp .5s cubic-bezier(.2,1.7,.4,1) both;animation-delay:var(--dl,0s)}
+@keyframes stamp{from{opacity:0;transform:scale(2.8) rotate(-20deg)}to{opacity:1;transform:none}}
+.ck .tx{font-size:28px;line-height:1.45;color:#dbe7fb}
+.ck .tx b{color:#fff;font-weight:700}
+.foot{margin-top:18px;font-size:21px;color:var(--dim)}
+
+/* ---------- slide 5 ---------- */
+.s5 .cols{display:grid;grid-template-columns:1.05fr 1fr;gap:34px}
+.s5 .stack{display:grid;gap:24px}
+.s5 .card{padding:32px 36px}
+.s5 .card h3{font-size:34px;margin-bottom:12px}
+.s5 .card p{font-size:28px}
+.secure{border-color:#22877b;background:linear-gradient(160deg,rgba(15,64,69,.9),rgba(8,30,38,.92))}
+.secure li{font-size:31px}.secure ul{gap:16px}.secure h3{font-size:36px}
+.tagx{font:700 17px var(--mono);letter-spacing:.1em;color:#031019;background:var(--amber);border-radius:8px;padding:3px 10px;margin-left:6px}
+.codebox{background:#050c18;border:1px solid #1d3257;border-radius:16px;padding:20px 26px;font:500 25px/1.65 var(--mono);white-space:pre;margin-top:26px;overflow:hidden}
+
+/* ---------- slide 6 / 7 ---------- */
+.s6 .cols{display:grid;grid-template-columns:420px 1fr;gap:44px;margin-top:4px}
+.steps{display:grid;gap:16px;align-content:start}
+.stp{display:flex;gap:16px;align-items:flex-start;padding:16px 20px;border-radius:18px;background:rgba(17,33,63,.7);border:1px solid var(--line);font-size:25px;line-height:1.45}
+.stp .n{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:700 24px var(--mono);color:#031019;background:var(--cyan)}
+.stp .k{font:700 .8em var(--mono);color:#bcd6ff;background:rgba(96,165,250,.16);padding:2px 8px;border-radius:7px}
+.note-s{margin-top:16px;font-size:21px;color:var(--dim);line-height:1.5}
+.s6 .term{margin-top:20px}
+.s7 .cols{display:grid;grid-template-columns:860px 780px;gap:40px}
+.s7 .lab{font-size:30px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.s7 .lab .n{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:700 22px var(--mono);color:#031019;background:var(--cyan)}
+.s7 .term{margin-top:18px}
+.callout{margin-top:34px;font-size:36px;font-weight:700;line-height:1.4}
+.callout small{display:block;font-size:23px;font-weight:400;color:var(--muted);margin-top:4px}
+
+/* ---------- slide 8 ---------- */
+.s8 .cols{display:grid;grid-template-columns:940px 1fr;gap:36px}
+.s8 .codebox{margin-top:0;font-size:21px;line-height:1.5;padding:18px 26px;overflow:hidden}
+.s8 .card{padding:22px 30px}
+.s8 .card h3{font-size:28px;margin-bottom:10px}
+.s8 .card li{font-size:25px}
+.s8 .card ul{gap:4px}
+.techs{display:flex;flex-wrap:wrap;gap:10px}
+.tech{font:500 22px var(--mono);padding:8px 16px;border-radius:12px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.35);color:#a5f3fc}
+.thanks{margin-top:24px;display:flex;align-items:center;justify-content:space-between;padding:20px 34px;border-radius:22px;background:linear-gradient(100deg,rgba(59,130,246,.28),rgba(34,211,238,.2));border:1px solid rgba(34,211,238,.4)}
+.thanks b{font-size:40px}
+.thanks a{font:500 26px var(--mono);color:#a5f3fc;text-decoration:none}
+
+/* ---------- 개선 슬라이드 ---------- */
+.si .grid2{gap:24px}
+.si .card{padding:26px 32px;min-height:300px}
+.si .card h3{font-size:31px;margin-bottom:12px}
+.si .card li{font-size:25px}
+.fb{font:700 16px var(--mono);letter-spacing:.06em;color:#031019;background:var(--teal);border-radius:8px;padding:3px 10px;margin-left:auto}
+.ba{display:grid;grid-template-columns:auto 1fr;column-gap:16px;row-gap:8px;font-size:25px;align-items:center;margin-bottom:10px}
+.ba .bf{font:700 17px var(--mono);color:#fda4af;border:1px solid rgba(253,164,175,.45);border-radius:8px;padding:2px 10px;text-align:center}
+.ba .af{font:700 17px var(--mono);color:var(--green);border:1px solid rgba(52,211,153,.45);border-radius:8px;padding:2px 10px;text-align:center}
+.ba .x{color:#fecaca;background:rgba(248,113,113,.16)}
+.etypes{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 12px}
+.etype{font:700 18px var(--mono);padding:5px 12px;border-radius:10px;background:rgba(248,113,113,.1);color:#fecaca;border:1px solid rgba(248,113,113,.35)}
+.etype.e2{background:rgba(251,191,36,.1);color:#fde68a;border-color:rgba(251,191,36,.35)}
+
+/* ---------- 용어 슬라이드 ---------- */
+.sg .gl{display:grid;grid-template-columns:1fr 1fr;gap:18px 26px;margin-top:4px}
+.gcard{display:grid;grid-template-columns:250px 1fr;align-items:center;gap:22px;padding:18px 26px;border-radius:20px;background:rgba(17,33,63,.72);border:1px solid var(--line)}
+.gcard .w{font:700 28px var(--mono);color:var(--cyan);line-height:1.3}
+.gcard .w small{display:block;font:500 18px var(--sans);color:var(--dim);margin-top:2px}
+.gcard .m{font-size:25px;line-height:1.5;color:#dbe7fb}
+.gcard .m .ex{display:block;font-size:20px;color:var(--muted);margin-top:2px}
+.ghint{margin-top:22px;font-size:22px;color:var(--dim)}
+.ghint kbd{font:700 20px var(--mono);border:1px solid var(--line);border-radius:6px;padding:1px 9px;color:#cfe3ff;background:rgba(17,33,63,.8)}
+.exp{margin-top:6px;padding:18px 26px;border-radius:20px;border:1px dashed rgba(196,181,253,.5);background:rgba(196,181,253,.07);font-size:23px;line-height:1.5;color:#ddd6fe}
+.exp b{color:#ede9fe}
+
+/* ---------- 용어 사전 패널 (G 키) ---------- */
+#gloss{position:absolute;left:60px;top:40px;width:1800px;max-height:900px;overflow:auto;z-index:55;background:rgba(5,10,20,.97);border:1px solid #2a5f93;border-radius:22px;
+  padding:24px 32px;box-shadow:0 30px 80px rgba(0,0,0,.7);display:none}
+#gloss.show{display:block}
+#gloss .nh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#gloss .nh b{font-size:28px;color:var(--cyan)}
+#gloss .nh span{font:500 18px var(--mono);color:var(--dim)}
+#gloss .gcols{display:grid;grid-template-columns:1fr 1fr;gap:0 36px}
+#gloss table{width:100%;border-collapse:collapse}
+#gloss td{padding:9px 10px;border-bottom:1px solid rgba(31,53,88,.7);font-size:21px;line-height:1.45;vertical-align:top;color:#dbe7fb}
+#gloss td:first-child{width:200px;font:700 20px var(--mono);color:#a5f3fc;white-space:nowrap}
+
+/* ---------- 하단 내비 ---------- */
+#nav{position:absolute;left:0;right:0;bottom:0;height:100px;display:flex;align-items:center;gap:26px;padding:0 60px 8px;z-index:20}
+#bar{position:absolute;left:0;bottom:0;height:7px;width:100%;background:rgba(96,165,250,.14);z-index:21}
+#bar i{display:block;height:100%;width:10%;background:linear-gradient(90deg,var(--blue2),var(--cyan));border-radius:0 6px 6px 0;transition:width .5s cubic-bezier(.2,.7,.2,1);box-shadow:0 0 18px rgba(34,211,238,.6)}
+.navbtn{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:30px;background:rgba(17,33,63,.9);border:1px solid var(--line);color:#cfe3ff;transition:.15s}
+.navbtn:hover{background:rgba(34,211,238,.18);border-color:rgba(34,211,238,.6)}
+.navbtn:disabled{opacity:.3;cursor:default}
+#pg{font:700 28px var(--mono);color:#cfe3ff;min-width:110px;text-align:center}
+#pg em{font-style:normal;color:var(--dim)}
+#ttl{font-size:22px;color:var(--muted)}
+#hintbar{margin-left:auto;font:500 18px var(--mono);color:var(--dim)}
+#hintbar kbd{font:inherit;border:1px solid var(--line);border-radius:6px;padding:1px 8px;color:#a9bddf;background:rgba(17,33,63,.8)}
+
+/* ---------- 발표자 메모 ---------- */
+#notes{position:absolute;right:36px;top:36px;width:700px;max-height:860px;overflow:auto;z-index:50;background:rgba(5,10,20,.96);border:1px solid #2a5f93;border-radius:22px;
+  padding:24px 30px;box-shadow:0 30px 80px rgba(0,0,0,.7);display:none}
+#notes.show{display:block}
+#notes .nh{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+#notes .nh b{font-size:26px;color:var(--cyan)}
+#timer{font:700 26px var(--mono);color:var(--amber)}
+#nbody{font-size:23px;line-height:1.6;color:#dbe7fb}
+#nbody h4{font-size:24px;color:#fff;margin:14px 0 6px}
+#nbody ol,#nbody ul{padding-left:28px}
+#nbody li{margin:4px 0}
+#nbody .tm{color:var(--amber);font:700 20px var(--mono)}
+#nbody .warn{color:#fda4af}
+
+noscript{position:fixed;inset:0;display:grid;place-items:center;background:#050912;color:#fff;font:24px var(--sans)}
+</style>
+</head>
+<body>
+<noscript>JavaScript를 켜야 발표 화면이 동작합니다.</noscript>
+
+<div id="stage">
+
+<!-- ================= 1. 타이틀 ================= -->
+<section class="slide s1" data-title="타이틀">
+  <svg class="route rv" data-dl="0.2" viewBox="0 0 760 760" aria-hidden="true">
+    <defs>
+      <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+      <mask id="rm"><path class="reveal-mask" d="M120 640 C 60 520, 260 520, 250 400 S 140 250, 330 210 S 600 260, 560 140 S 640 110, 660 90" stroke="#fff" stroke-width="30" fill="none"/></mask>
+    </defs>
+    <g mask="url(#rm)"><path class="line" d="M120 640 C 60 520, 260 520, 250 400 S 140 250, 330 210 S 600 260, 560 140 S 640 110, 660 90"/></g>
+    <g class="pin" style="--pd:1.6s"><circle cx="120" cy="640" r="22" fill="#3b82f6"/><circle cx="120" cy="640" r="8" fill="#e8f0fc"/></g>
+    <g class="pin" style="--pd:2.4s"><circle cx="330" cy="210" r="22" fill="#22d3ee"/><circle cx="330" cy="210" r="8" fill="#031019"/></g>
+    <g class="pin" style="--pd:3.1s"><circle cx="660" cy="90" r="22" fill="#2dd4bf"/><circle cx="660" cy="90" r="8" fill="#031019"/></g>
+  </svg>
+  <div class="hero">
+    <div class="kick rv">PYTHON · API 활용 과제</div>
+    <h1 class="rv">국내 여행 추천<br>프로그램</h1>
+    <p class="sub rv"><span class="mark fx" data-dl="1.1">Gemini + Kakao Local API</span> 기반<br>여행지 추천 &amp; 리포트 생성</p>
+    <a class="gh rv" href="https://github.com/geunwa/travel_project" target="_blank" rel="noopener">GitHub: https://github.com/geunwa/travel_project</a>
+    <div class="hint rv">← → 키 또는 하단 버튼으로 이동 · G 용어 사전 · S 발표자 메모</div>
+  </div>
+  <template class="note">
+    <p><span class="tm">약 20초</span></p>
+    <ul><li>인사 후 한 줄 소개: 날짜를 입력하면 Gemini가 여행지를 추천하고, Kakao로 맛집을 찾아 리포트를 만드는 프로그램입니다.</li>
+    <li>평가 포인트 예고: 과제 요구사항 충족 여부 + 실제 시연.</li></ul>
+  </template>
+</section>
+
+<!-- ================= 2. 과제 소개 + 데이터 흐름 ================= -->
+<section class="slide s2" data-title="과제 소개 · 데이터 흐름">
+  <div class="kick rv">02 · 과제 소개</div>
+  <h2 class="rv">날짜 하나로 <span class="circle fx" data-dl="1.0">여러 API</span>를 엮습니다</h2>
+  <div class="flow">
+    <div class="node rv" data-dl="0.3"><div class="tag">INPUT</div><b>날짜 입력</b><span class="d"><span class="ic">--date "YYYY-MM-DD"</span></span></div>
+    <div class="arr" data-dl="0.85"><i></i></div>
+    <div class="node api rv" data-dl="1.4"><div class="tag">STEP ①</div><b>Gemini 추천<br>(JSON)</b><span class="d">도시 · 날씨 · 행사 · 추천 이유</span></div>
+    <div class="arr" data-dl="1.95"><i></i></div>
+    <div class="node api rv" data-dl="2.5"><div class="tag">STEP ②</div><b>Kakao<br>맛집 검색</b><span class="d">도시별 맛집 5곳 (GET)</span></div>
+    <div class="arr" data-dl="3.05"><i></i></div>
+    <div class="node api rv" data-dl="3.6"><div class="tag">STEP ③</div><b>Gemini<br>최종 리포트</b><span class="d">Markdown 생성</span></div>
+    <div class="arr" data-dl="4.15"><i></i></div>
+    <div class="node save rv" data-dl="4.7"><div class="tag">OUTPUT</div><b>JSON + MD<br>저장</b><span class="d"><span class="ic">results/</span></span></div>
+  </div>
+  <div class="chips">
+    <div class="chipx rv" style="left:165px" data-dl="1.05">date_text</div>
+    <div class="chipx rv" style="left:515px" data-dl="2.15">recommended_cities</div>
+    <div class="chipx rv" style="left:865px" data-dl="3.25">restaurants_by_city</div>
+    <div class="chipx rv" style="left:1215px" data-dl="4.35">.md 리포트 + .json 원본</div>
+  </div>
+  <div class="banner rv" data-dl="5.7">핵심: 앞 단계의 <span class="mark fx" data-dl="6.1">출력이 다음 단계의 입력</span>이 된다</div>
+  <template class="note">
+    <p><span class="tm">약 35초</span></p>
+    <ul><li>왼쪽에서 오른쪽으로 짚기: 날짜 → ① Gemini 추천(JSON) → ② Kakao 맛집 검색 → ③ Gemini 최종 리포트 → JSON+MD 저장.</li>
+    <li>점선 칩이 단계 사이에 넘어가는 데이터: 추천 도시 목록이 검색 입력이 되고, 도시별 맛집이 리포트 입력이 됩니다.</li>
+    <li>한 줄 결론: 단일 API 호출이 아니라 여러 API를 엮어 결과물을 만든다.</li>
+    <li><b>쉽게 말하면</b>: AI에게 "이 날짜에 갈 만한 곳"을 묻고, 그 답(도시 이름)으로 카카오에 맛집을 검색하고, 두 결과를 다시 AI에게 주며 여행 리포트를 써 달라고 하는 프로그램입니다.</li></ul>
+  </template>
+</section>
+
+<!-- ================= 3. 용어 정리 ================= -->
+<section class="slide sg" data-title="용어 정리">
+  <div class="kick rv">03 · 용어 정리</div>
+  <h2 class="rv">발표에 나오는 <span class="mark fx" data-dl="0.8">용어 8개</span>, 먼저 쉽게 정리합니다</h2>
+  <div class="gl">
+    <div class="gcard rv"><div class="w">API</div><div class="m">다른 서비스에 일을 부탁하는 정해진 창구<span class="ex">Gemini에는 글 생성, 카카오에는 장소 검색을 부탁</span></div></div>
+    <div class="gcard rv"><div class="w">GET / POST<small>요청 방식</small></div><div class="m">GET은 "조회해 줘", POST는 "만들어 줘"<span class="ex">카카오 검색 = GET, Gemini에 지시문 전달 = POST</span></div></div>
+    <div class="gcard rv"><div class="w">LLM · 프롬프트</div><div class="m">글을 이해하고 만드는 AI(Gemini) · AI에게 주는 지시문</div></div>
+    <div class="gcard rv"><div class="w">JSON · 파싱</div><div class="m"><span class="ic">"이름": 값</span> 형태로 정리한 데이터 · AI 답에서 그 데이터를 꺼내는 일</div></div>
+    <div class="gcard rv"><div class="w">API 키 · .env</div><div class="m">서비스용 비밀번호 · 그 비밀번호를 코드 밖에 따로 보관하는 파일</div></div>
+    <div class="gcard rv"><div class="w">캐시</div><div class="m">받은 결과를 저장해 두고, 같은 요청이면 다시 묻지 않고 꺼내 쓰는 것</div></div>
+    <div class="gcard rv"><div class="w">오류 코드</div><div class="m"><b>401/403</b> 키 오류 · <b>429</b> 사용량 초과 · <b>503</b> 서비스 과부하</div></div>
+    <div class="gcard rv"><div class="w">CLI</div><div class="m">마우스 없이 터미널에 명령어를 입력해 실행하는 방식</div></div>
+  </div>
+  <div class="ghint rv" data-dl="1.6">발표 중 언제든 <kbd>G</kbd> 키를 누르면 전체 용어 사전(22개)이 열립니다.</div>
+  <template class="note">
+    <p><span class="tm">약 40초</span></p>
+    <ul><li>뒤 슬라이드에 계속 나오는 용어라 먼저 짚고 갑니다. 하나씩 읽기보다 GET/POST, JSON, 캐시 세 개를 강조.</li>
+    <li>예시로 연결: "카카오 맛집 검색은 GET, Gemini에 지시문을 보내는 건 POST입니다."</li>
+    <li>질문이 나오면 <b>G</b> 키로 용어 사전을 열어 보여주면 됩니다.</li></ul>
+  </template>
+</section>
+
+<!-- ================= 4. 요구사항 충족 ① 목표 ================= -->
+<section class="slide s3" data-title="요구사항 충족 ① 목표">
+  <div class="kick rv">04 · 과제 요구사항 충족 ① 목표</div>
+  <h2 class="rv">과제 목표 4가지, 코드로 보여줍니다</h2>
+  <div class="grid2">
+    <div class="card rv"><h3><span class="no">1</span>GET / POST 차이</h3>
+      <table class="mini"><tr><th>API</th><th>메서드</th><th>데이터 전달</th></tr>
+        <tr><td>Gemini (LLM)</td><td><span class="verb post circle fx" data-dl="0.9">POST</span></td><td>프롬프트를 요청 <b>본문(body)</b>에</td></tr>
+        <tr><td>Kakao Local</td><td><span class="verb get circle fx" data-dl="1.4">GET</span></td><td>검색어를 URL <b>쿼리 파라미터</b>로</td></tr>
+      </table>
+      <div class="foot" style="margin-top:12px;font-size:20px">Gemini는 SDK(<span class="ic">google-genai</span>) 경유 · Kakao는 <span class="ic">requests.get</span></div>
+    </div>
+    <div class="card rv"><h3><span class="no">2</span>LLM 출력 → JSON → 다음 단계</h3>
+      <div class="flowmini">
+        <div class="st">Gemini 응답 → <span class="ic">json.loads</span> 파싱 · 키 검증</div>
+        <div class="dn">▼</div>
+        <div class="st"><span class="mark fx" data-dl="1.6"><span class="ic">recommended_cities</span></span> 추출</div>
+        <div class="dn">▼</div>
+        <div class="st">도시명 정규화 <span class="ic">normalize_city_keyword</span> → <span class="ic">"부산 맛집"</span></div>
+      </div>
+    </div>
+    <div class="card rv"><h3><span class="no">3</span>API 오류 대응</h3>
+      <div class="pills"><span class="pill">인증 401/403</span><span class="pill">쿼터 429</span><span class="pill">네트워크</span><span class="pill">파싱</span></div>
+      <ul><li><span class="ic">classify_error</span>로 <span class="mark fx" data-dl="1.9">유형 분류</span> → <span class="ic">errors</span>에 기록</li>
+      <li>LLM 파싱 실패 → <b>재시도 1회</b></li>
+      <li>Kakao 실패·0건 → "데이터 없음(사유)"으로 계속</li></ul>
+    </div>
+    <div class="card rv"><h3><span class="no">4</span><span class="mark fx" data-dl="2.3">.env</span>로 키 관리</h3>
+      <ul><li><b>노출 방지</b>: 코드·저장소에 키가 없음</li>
+      <li><b>교체 용이</b>: 코드 수정 없이 키만 교체</li>
+      <li><b>과금 사고 예방</b>: 키 유출 위험 차단</li></ul>
+    </div>
+  </div>
+  <template class="note">
+    <p><span class="tm">약 35초</span></p>
+    <ul><li>GET/POST: 프롬프트처럼 크고 생성성 요청은 POST(본문), 검색어 조회는 GET(쿼리). Gemini의 POST는 SDK 내부 REST 요청이라 코드에는 안 보인다고 한 줄 덧붙이기.</li>
+    <li>JSON 구조화: 추천 결과를 JSON으로 받아야 도시 목록을 바로 검색에 넘길 수 있습니다.</li>
+    <li>JSON 다음 단계: 도시명은 정규화해서 검색합니다(부산광역시 → 부산, 대구는 그대로).</li>
+    <li>오류 대응: 상태 코드와 예외 종류로 인증(401/403)·쿼터(429)·서버(5xx)·네트워크·파싱·0건을 구분해 errors에 type으로 기록하고, 콘솔과 리포트 '오류 요약'에 보여줍니다.</li>
+    <li>.env: 노출 방지 · 교체 용이 · 과금 사고 예방.</li>
+    <li><b>쉽게 말하면</b>: 오류가 나도 프로그램이 멈추지 않고, "키가 틀렸다 / 사용량 초과 / 서비스 과부하"처럼 이유를 나눠 기록합니다. API 키는 비밀번호라 코드가 아닌 .env 파일에 따로 둡니다.</li></ul>
+  </template>
+</section>
+
+<!-- ================= 5. 요구사항 충족 ② 체크리스트 ================= -->
+<section class="slide s4" data-title="요구사항 충족 ② 체크리스트">
+  <div class="kick rv">05 · 과제 요구사항 충족 ② 기능 체크리스트</div>
+  <h2 class="rv">기능 요구사항 <span class="mark fx" data-dl="0.8">모두 구현</span></h2>
+  <div class="ckgrid">
+    <div class="ck"><span class="stamp" data-dl="0.7">✅</span><div class="tx rv" data-dl="0.7"><b>CLI (argparse)</b> · <span class="ic">--date</span> 필수 옵션</div></div>
+    <div class="ck"><span class="stamp" data-dl="1.2">✅</span><div class="tx rv" data-dl="1.2"><b>날짜 검증</b> · <span class="ic">YYYY-MM-DD</span> 형식·실제 날짜 검사, 오류 시 사용법 출력 후 종료</div></div>
+    <div class="ck"><span class="stamp" data-dl="1.7">✅</span><div class="tx rv" data-dl="1.7"><b>LLM</b> Gemini <span class="ic">gemini-flash-latest</span> · <b>지도</b> Kakao Local (교체 가능 구조)</div></div>
+    <div class="ck"><span class="stamp" data-dl="2.2">✅</span><div class="tx rv" data-dl="2.2"><b>1차 JSON 스키마</b> · <span class="ic">recommended_city</span> <span class="ic">recommended_cities</span> <span class="ic">weather</span> <span class="ic">events</span> <span class="ic">reason</span></div></div>
+    <div class="ck"><span class="stamp" data-dl="2.7">✅</span><div class="tx rv" data-dl="2.7"><b>맛집 필드</b> · <span class="ic">name</span> <span class="ic">address</span> <span class="ic">category</span> <span class="ic">phone</span> <span class="ic">url</span> <span class="ic">x</span> <span class="ic">y</span></div></div>
+    <div class="ck"><span class="stamp" data-dl="3.2">✅</span><div class="tx rv" data-dl="3.2"><b>검색 0건 처리</b> · 중단 없이 "데이터 없음"으로 다음 단계 진행</div></div>
+    <div class="ck"><span class="stamp" data-dl="3.7">✅</span><div class="tx rv" data-dl="3.7"><b>최종 리포트</b> · 추천지역 · 이유 · 날씨 · 행사 · 맛집 · 1일 일정</div></div>
+    <div class="ck"><span class="stamp" data-dl="4.2">✅</span><div class="tx rv" data-dl="4.2"><b>에러 처리</b> · 키 미설정 즉시 종료 / 유형 분류 / 지도 실패 시 계속 / 파싱 재시도 1회</div></div>
+    <div class="ck"><span class="stamp" data-dl="4.7">✅</span><div class="tx rv" data-dl="4.7"><b>결과 저장</b> · <span class="ic">results/</span> 에 JSON(추천 · 맛집 · <span class="circle fx" data-dl="5.2">errors</span>) + MD</div></div>
+  </div>
+  <div class="foot rv" data-dl="5.0">※ 모델명은 코드(<span class="ic">utils.py</span>의 <span class="ic">GEMINI_MODEL</span>) 기준입니다.</div>
+  <template class="note">
+    <p><span class="tm">약 35초</span></p>
+    <ul><li>체크 표시가 하나씩 찍히는 동안 항목을 전부 읽지 말고 핵심 3개만 강조: 날짜 검증, 검색 0건 처리, 파싱 재시도 1회.</li>
+    <li>1차 JSON은 과제 필수 키 recommended_city(대표 도시)와 보너스 recommended_cities(2~3곳)를 함께 저장합니다.</li>
+    <li>맛집 필드에 phone이 추가로 들어 있습니다.</li>
+    <li><b>쉽게 말하면</b>: 과제가 "이건 꼭 있어야 한다"고 정한 기능 목록이고, 전부 들어 있다는 확인표입니다. argparse는 명령어 뒤의 --date 값을 읽어 주는 기능입니다.</li></ul>
+  </template>
+</section>
+
+<!-- ================= 6. 보너스 + 보안 ================= -->
+<section class="slide s5" data-title="보너스 · 보안">
+  <div class="kick rv">06 · 보너스 + 보안</div>
+  <h2 class="rv">보너스 2개, 보안 4가지</h2>
+  <div class="cols">
+    <div class="stack">
+      <div class="card rv"><h3><span class="invert fx" data-dl="1.0">복수 지역</span> 추천 <small style="font-size:22px;color:var(--cyan)">BONUS</small></h3><p>추천 도시를 최대 3곳으로 받고, 도시별로 맛집을 검색해 리포트에 정리합니다.</p></div>
+      <div class="card rv"><h3><span class="invert fx" data-dl="1.5">결과 캐싱</span> <small style="font-size:22px;color:var(--cyan)">BONUS</small></h3><p>같은 날짜를 다시 실행하면 저장된 JSON·MD를 재사용하고 API 호출을 건너뜁니다.</p></div>
+      <div class="exp rv"><b>해 본 경험</b> · 다른 분의 과제를 보고 화면(그래픽) 구현도 해 보았으나, 과제 범위가 아니어서 제출에서는 제외했습니다.</div>
+    </div>
+    <div class="card secure rv"><h3>보안: API 키 관리</h3>
+      <ul>
+        <li><span class="ic">.env</span> 사용 (<span class="ic">python-dotenv</span>)</li>
+        <li><span class="ic">.gitignore</span>에서 <span class="mark fx" data-dl="2.0"><span class="ic">.env</span> 제외</span></li>
+        <li><span class="ic">.env.example</span> 제공 (형식만 안내)</li>
+        <li><span class="mark fx" data-dl="2.5">키 미설정 시 즉시 종료</span> + 설정 방법 안내</li>
+      </ul>
+      <div class="codebox"><span class="tc"># .env.example</span>
+<span class="tk">GEMINI_API_KEY</span>=<span class="ts">YOUR_GEMINI_API_KEY</span>
+<span class="tk">KAKAO_REST_API_KEY</span>=<span class="ts">YOUR_KAKAO_REST_API_KEY</span></div>
+    </div>
+  </div>
+  <template class="note">
+    <p><span class="tm">약 30초</span></p>
+    <ul><li>보너스는 과제가 제시한 2개(복수 지역, 캐싱)를 모두 구현했습니다.</li>
+    <li><b>쉽게 말하면</b>: 복수 지역 = 도시를 2~3곳 추천받아 도시마다 맛집 검색. 캐싱 = 같은 날짜를 다시 실행하면 저장된 결과를 꺼내 써서 AI·카카오에 다시 묻지 않음(시간·비용 절약).</li>
+    <li>경험 한 줄: 다른 분 과제를 보고 화면 구현도 해 봤지만 제출 범위가 아니라 뺐다고 짧게 언급.</li>
+    <li>보안: 키는 .env에서만 읽고, .gitignore로 제외하며, 예시 파일에는 형식만 있습니다. 키가 없으면 실행 즉시 설정 방법을 알려주고 종료합니다.</li>
+    <li class="warn">.env 파일은 화면에 열지 않습니다.</li>
+    <li><b>8번 슬라이드부터 시연</b>: VS Code를 열어 두고, 터미널 위치가 <b>travel_project</b>인지, <b>(.venv)</b>가 켜져 있는지 확인하세요.</li></ul>
+  </template>
+</section>
+
+<!-- ================= 7. 사전평가 이후 개선 ================= -->
+<section class="slide si" data-title="사전평가 이후 개선">
+  <div class="kick rv">07 · 사전평가 피드백 반영</div>
+  <h2 class="rv">사전평가 이후 <span class="mark fx" data-dl="0.8">이렇게 고쳤습니다</span></h2>
+  <div class="grid2">
+    <div class="card rv"><h3><span class="no">1</span>도시명 키워드 정규화<span class="fb">FEEDBACK</span></h3>
+      <div class="ba"><span class="bf">BEFORE</span><span><span class="ic">대구</span> → <span class="ic x">대</span> · <span class="ic">부산광역시</span> → <span class="ic x">부산광역</span></span>
+      <span class="af">AFTER</span><span><span class="ic">대구</span> → <span class="ic">대구</span> · <span class="ic">부산광역시</span> → <span class="ic">부산</span></span></div>
+      <ul><li>접미사를 떼고 <b>2글자 이상 남을 때만</b> 제거</li><li>섬 지명 표준화 <span class="ic">제주도 → 제주</span></li></ul>
+    </div>
+    <div class="card rv"><h3><span class="no">2</span>오류 유형 분류<span class="fb">FEEDBACK</span></h3>
+      <div class="etypes"><span class="etype">AUTH_ERROR</span><span class="etype">QUOTA_ERROR</span><span class="etype">SERVER_ERROR</span><span class="etype">NETWORK_ERROR</span><span class="etype e2">PARSE_ERROR</span><span class="etype e2">EMPTY_RESULT</span></div>
+      <ul><li><span class="ic">{step, type, status, message}</span> 구조로 기록</li><li>콘솔에 유형별 안내 · 401/403 점검 체크리스트(README)</li></ul>
+    </div>
+    <div class="card rv"><h3><span class="no">3</span>지도 API 교체 가능 구조<span class="fb">FEEDBACK</span></h3>
+      <div class="flowmini"><div class="st"><span class="ic">PlaceSearchProvider</span> 공통 인터페이스 · <span class="ic">search()</span></div><div class="dn">▼</div><div class="st"><span class="ic">KakaoLocalProvider</span> (현재) · Naver 등은 어댑터만 추가</div></div>
+    </div>
+    <div class="card rv"><h3><span class="no">4</span>실패해도 결과를 지킨다</h3>
+      <ul><li>리포트 LLM 실패 → 1회 재시도 후 <span class="mark fx" data-dl="2.4">맛집을 유지한 기본 리포트</span></li>
+      <li>1차 추천 실패 결과는 <b>캐시로 재사용하지 않음</b></li>
+      <li>스키마 타입 검증 · 날짜 자릿수 검증 강화</li></ul>
+    </div>
+  </div>
+  <template class="note">
+    <p><span class="tm">약 30초</span></p>
+    <ul><li>사전평가에서 지적받은 항목(도시명 정규화, 401/403 대응, 지도 교체 설계)을 코드로 고쳤다고 한 줄로 소개.</li>
+    <li>1번: 예전 규칙은 '대구'를 '대'로 잘라 엉뚱한 검색어가 됐습니다. 지금은 2글자 이상 남을 때만 접미사를 뗍니다.</li>
+    <li>2번: 인증·쿼터·서버·네트워크·파싱·0건을 구분해 기록합니다. 실제 401 결과는 저장소 샘플 travel_2027-08-15에 있습니다(마지막 슬라이드).</li>
+    <li>3번: Kakao 호출을 인터페이스 뒤로 분리해, 다른 지도 API는 search()만 구현하면 됩니다.</li>
+    <li>4번: 예전에는 리포트 생성이 503으로 실패하면 이미 찾은 맛집까지 '데이터 없음'으로 사라졌습니다. 지금은 맛집을 유지합니다.</li>
+    <li>문서도 보강: GET/POST 엔드포인트, JSON 강제 이유, 키 관리 이유, 캐시 정책(README).</li>
+    <li><b>쉽게 말하면</b>: 정규화 = 검색하기 좋게 이름을 다듬기. 인터페이스 = 부품을 바꿔 끼울 수 있게 정한 연결 규격(카카오 대신 네이버로 바꾸기 쉬움).</li></ul>
+  </template>
+</section>
+
+<!-- ================= 8. 시연 ① ================= -->
+<section class="slide s6" data-title="시연 ① 실시간 실행">
+  <div class="kick rv">08 · 시연 ① 실시간 실행</div>
+  <h2 class="rv">날짜만 넣으면 <span class="circle fx" data-dl="1.0">3단계</span>가 순서대로 실행됩니다</h2>
+  <div class="cols">
+    <div class="steps">
+      <div class="stp rv"><span class="n">1</span><div>아래 명령어 <b>[복사]</b> <span class="k">C</span></div></div>
+      <div class="stp rv"><span class="n">2</span><div>VS Code 터미널로 <span class="k">Alt</span>+<span class="k">Tab</span><br>붙여넣기 → <span class="k">Enter</span></div></div>
+      <div class="stp rv"><span class="n">3</span><div>로그 <span class="ic">[1/3]</span> → <span class="ic">[2/3]</span> → <span class="ic">[3/3]</span> 확인</div></div>
+      <div class="stp rv"><span class="n">4</span><div><span class="ic">results/</span>에 생성된 JSON · MD 확인</div></div>
+      <div class="note-s rv">※ 오른쪽 터미널은 <b>예비 화면</b>입니다. 실제 실행은 VS Code 터미널에서 합니다.</div>
+    </div>
+    <div>
+      <div class="cmd rv" data-copy='python main.py --date "2026-12-31"'><code><span class="tm">python</span> main.py <span class="tf">--date</span> <span class="ts">"2026-12-31"</span></code><button class="copybtn" type="button">복사</button></div>
+      <div class="term rv" data-dl="0.9">
+        <div class="term-bar"><i class="d r"></i><i class="d y"></i><i class="d g"></i><span class="term-title">PowerShell · travel_project</span><span class="badge">예비 화면</span><button class="replay" type="button">↻ 다시 재생</button></div>
+        <div class="term-body"><span class="ln cmdl"><span class="tp">(.venv) PS travel_project&gt;</span> <span class="typed"><span class="tm">python</span> main.py <span class="tf">--date</span> <span class="ts">"2026-12-31"</span></span><span class="caret"></span></span><span class="ln out" data-wait="900"><span class="hi-c">[1/3]</span> 1차 추천 생성 중(LLM)...</span><span class="ln out" data-wait="700">  - recommended_cities: [<span class="ts">'제주'</span>, <span class="ts">'부산'</span>, <span class="ts">'강릉'</span>]</span><span class="ln out" data-wait="700"><span class="hi-c">[2/3]</span> 맛집 검색 중(지도/장소 API)...</span><span class="ln out" data-wait="450">  - 제주: 맛집 5곳 검색 완료</span><span class="ln out" data-wait="350">  - 부산: 맛집 5곳 검색 완료</span><span class="ln out" data-wait="350">  - 강릉: 맛집 5곳 검색 완료</span><span class="ln out" data-wait="650"><span class="hi-c">[3/3]</span> 최종 리포트 생성 중(LLM)...</span><span class="ln out" data-wait="800">  - 리포트 생성 완료</span><span class="ln out" data-wait="300"> </span><span class="ln out ok-c" data-wait="300">완료! <span class="circle fx t" data-dl="0.2">results\travel_2026-12-31.md</span> 를 확인하세요.</span><span class="ln out dim-c" data-wait="250">원본 데이터: results\travel_2026-12-31.json</span></div>
+      </div>
+      <div class="keyhint rv">단축키 <b>C</b> = 명령어 복사 · 도시와 내용은 실행마다 달라집니다</div>
+    </div>
+  </div>
+  <template class="note">
+    <p><span class="tm">약 70초 (시연)</span></p>
+    <h4>시연 전 준비</h4>
+    <ul><li>VS Code 터미널 위치가 <b>travel_project</b>, <b>(.venv)</b> 표시 확인</li>
+    <li>터미널 글자 확대(<b>Ctrl</b> + <b>+</b>)</li>
+    <li class="warn"><b>results/</b>에 <b>travel_2026-12-31.json / .md</b>가 없는지 확인 (있으면 삭제)</li>
+    <li>.env는 열지 않기 · 인터넷 연결 확인</li>
+    <li>발표 당일 다른 날짜로 1회 사전 실행해 API 응답 확인 (예: 2027-03-01, 실행 후 결과 파일 삭제)</li>
+    <li>GitHub에 최신 커밋 push 완료 여부 확인</li></ul>
+    <h4>시연 순서</h4>
+    <ol><li>[복사] 클릭 (또는 C 키)</li>
+    <li><b>Alt+Tab</b> → VS Code 터미널에 붙여넣기 → Enter</li>
+    <li>응답을 기다리는 동안 2번 슬라이드의 흐름을 말로 설명</li>
+    <li>[3/3] 완료 후 <b>results/</b>의 MD 파일을 열어 리포트 확인 (선택)</li>
+    <li>9번 슬라이드로 돌아와 다음 시연 진행</li></ol>
+    <p class="warn">Gemini 503(과부하)이면 자동으로 1회 재시도하고, 그래도 실패하면 맛집을 유지한 기본 리포트를 만듭니다. 이 경우 "기본 리포트를 생성했습니다" 안내가 나오며, 오류 요약에 SERVER_ERROR가 남는 것을 보여주면 됩니다.</p>
+    <p class="warn">네트워크 등으로 실행 자체가 안 되면: 오른쪽 예비 화면으로 설명합니다.</p>
+    <p><b>쉽게 말하면</b>: [1/3] AI에게 도시 추천 → [2/3] 카카오에서 맛집 검색 → [3/3] AI가 리포트 작성. 끝나면 results 폴더에 파일 2개가 생깁니다.</p>
+  </template>
+</section>
+
+<!-- ================= 9. 시연 ② ================= -->
+<section class="slide s7 t7" data-title="시연 ② 캐싱 · 에러 검증">
+  <div class="kick rv">09 · 시연 ② 캐싱 + 에러 검증</div>
+  <h2 class="rv">재실행은 <span class="invert fx" data-dl="0.9">(캐시)</span>, 잘못된 입력은 안내 후 종료</h2>
+  <div class="cols">
+    <div>
+      <div class="lab rv"><span class="n">1</span>같은 명령 재실행 → 캐시 재사용</div>
+      <div class="cmd sm rv" data-copy='python main.py --date "2026-12-31"'><code><span class="tm">python</span> main.py <span class="tf">--date</span> <span class="ts">"2026-12-31"</span></code><button class="copybtn" type="button">복사</button></div>
+      <div class="term rv" data-dl="0.7">
+        <div class="term-bar"><i class="d r"></i><i class="d y"></i><i class="d g"></i><span class="term-title">PowerShell · travel_project</span><span class="badge">예비 화면</span><button class="replay" type="button">↻ 다시 재생</button></div>
+        <div class="term-body"><span class="ln cmdl"><span class="tp">PS travel_project&gt;</span> <span class="typed"><span class="tm">python</span> main.py <span class="tf">--date</span> <span class="ts">"2026-12-31"</span></span><span class="caret"></span></span><span class="ln out" data-wait="700"><span class="am-c">[캐시]</span> 기존 데이터를 재사용합니다: results/travel_2026-12-31.json</span><span class="ln out" data-wait="450"><span class="hi-c">[1/3]</span> <span class="invert fx t" data-dl="0.1">(캐시)</span> 추천 도시: 제주, 부산, 강릉</span><span class="ln out" data-wait="450"><span class="hi-c">[2/3]</span> <span class="invert fx t" data-dl="0.1">(캐시)</span> 맛집 총 15곳 로드 완료 (3개 지역)</span><span class="ln out" data-wait="450"><span class="hi-c">[3/3]</span> <span class="invert fx t" data-dl="0.1">(캐시)</span> 기존 리포트를 재사용합니다.</span><span class="ln out" data-wait="250"> </span><span class="ln out ok-c" data-wait="300">완료! results\travel_2026-12-31.md 를 확인하세요.</span><span class="ln out dim-c" data-wait="250">원본 데이터: results\travel_2026-12-31.json</span></div>
+      </div>
+      <div class="callout rv" data-dl="0.6"><span class="circle fx" data-dl="3.2">API 호출 0회</span><small>Gemini · Kakao를 한 번도 부르지 않고 저장된 JSON · MD를 재사용</small></div>
+    </div>
+    <div>
+      <div class="lab rv"><span class="n">2</span>잘못된 날짜 → 안내 후 종료</div>
+      <div class="cmd sm rv" data-copy='python main.py --date "2026-99-99"'><code><span class="tm">python</span> main.py <span class="tf">--date</span> <span class="ts">"2026-99-99"</span></code><button class="copybtn" type="button">복사</button></div>
+      <div class="term rv" data-dl="0.9">
+        <div class="term-bar"><i class="d r"></i><i class="d y"></i><i class="d g"></i><span class="term-title">PowerShell · travel_project</span><span class="badge">예비 화면</span></div>
+        <div class="term-body"><span class="ln cmdl"><span class="tp">PS travel_project&gt;</span> <span class="typed"><span class="tm">python</span> main.py <span class="tf">--date</span> <span class="ts">"2026-99-99"</span></span><span class="caret"></span></span><span class="ln out" data-wait="600"><span class="err-c">[오류]</span> 날짜 형식이 올바르지 않습니다: <span class="ts">'2026-99-99'</span></span><span class="ln out" data-wait="300">usage: main.py [-h] --date DATE</span><span class="ln out" data-wait="300">예시: python main.py --date "2026-12-31"</span></div>
+      </div>
+      <div class="callout rv" data-dl="0.8"><span class="mark fx" data-dl="4.6">사용법 안내 후 종료</span><small>종료 코드 1 · API 호출 전에 입력 검증에서 차단</small></div>
+    </div>
+  </div>
+  <template class="note">
+    <p><span class="tm">약 50초 (시연)</span></p>
+    <h4>시연 순서</h4>
+    <ol><li>8번 시연이 끝난 상태에서 같은 명령을 다시 실행 (복사 버튼 또는 <b>1</b> 키)</li>
+    <li><b>[캐시]</b>와 각 단계의 <b>(캐시)</b> 표시, 응답이 즉시 나오는 점을 보여주기 → <b>API 호출 0회</b></li>
+    <li>잘못된 날짜 명령 실행 (복사 버튼 또는 <b>2</b> 키) → 오류 안내 후 즉시 종료</li>
+    <li><b>Alt+Tab</b>으로 슬라이드로 복귀 → 10번 슬라이드</li></ol>
+    <p class="warn">잘못된 날짜는 API 호출 전에 걸러집니다. 종료 코드는 1이라 "정상 종료"가 아니라 "안내 후 종료"로 표현하세요.</p>
+    <p><b>쉽게 말하면</b>: (캐시)는 "저장해 둔 결과를 꺼내 썼다"는 표시라 AI·카카오에 다시 묻지 않아 바로 끝납니다. 종료 코드 1은 "문제가 있어 멈췄다"는 신호입니다.</p>
+    <p>첫 실행에서 API 실패(failed)가 기록되었다면 재실행해도 캐시를 쓰지 않고 다시 호출합니다("[캐시] 이전 실행에 실패 기록이 있어..." 안내).</p>
+    <p class="warn">예비 방안: 8번 실행이 실패했다면 저장소 샘플 날짜로 캐시를 시연합니다 → <b>python main.py --date "2027-05-05"</b> (오류 없이 저장된 샘플이라 반드시 (캐시)로 표시)</p>
+  </template>
+</section>
+
+<!-- ================= 10. 결과물 + 마무리 ================= -->
+<section class="slide s8" data-title="결과물 · 마무리">
+  <div class="kick rv">10 · 결과물 + 마무리</div>
+  <h2 class="rv">JSON 원본 + Markdown 리포트가 <span class="mark fx" data-dl="1.0">자동 저장</span>됩니다</h2>
+  <div class="cols">
+    <div class="codebox rv"><span class="tc">// results/travel_2027-05-05.json (저장소 샘플, 일부 생략)</span>
+{
+  <span class="tk">"date_text"</span>: <span class="ts">"2027-05-05"</span>,
+  <span class="tk">"recommendation"</span>: {
+    <span class="tk">"recommended_city"</span>: <span class="ts">"태안"</span>,
+    <span class="tk">"recommended_cities"</span>: [<span class="ts">"태안"</span>, <span class="ts">"담양"</span>, <span class="ts">"춘천"</span>],
+    <span class="tk">"weather"</span>: <span class="ts">"낮 기온이 20~23도 안팎으로 온화하고 …"</span>,
+    <span class="tk">"events"</span>: [<span class="ts">"태안 세계튤립꽃박람회"</span>, <span class="ts">"담양대나무축제"</span>],
+    <span class="tk">"reason"</span>: <span class="ts">"5월 초는 싱그러운 신록과 …"</span>
+  },
+  <span class="tk">"restaurants_by_city"</span>: {
+    <span class="tk">"태안"</span>: [ { <span class="tk">"name"</span>: <span class="ts">"수미정 본점"</span>, <span class="tk">"x"</span>: <span class="tn">126.35…</span>, <span class="tk">"y"</span>: <span class="tn">36.53…</span> }, … ],
+    <span class="tk">"담양"</span>: [ … ],  <span class="tk">"춘천"</span>: [ … ]
+  },
+  <span class="circle fx" data-dl="2.2"><span class="tk">"errors"</span>: []</span>
+}
+<span class="tc">// 401 샘플 travel_2027-08-15.json 의 errors 항목</span>
+{ <span class="tk">"step"</span>: <span class="ts">"place_search"</span>, <span class="tk">"type"</span>: <span class="err-c">"AUTH_ERROR"</span>, <span class="tk">"status"</span>: <span class="ts">"failed"</span>,
+  <span class="tk">"city"</span>: <span class="ts">"강릉"</span>, <span class="tk">"message"</span>: <span class="ts">"kakao 오류: 401 Client Error: …"</span> }</div>
+    <div>
+      <div class="card rv"><h3>Markdown 리포트 항목</h3>
+        <ul><li>추천 지역 · 추천 이유</li><li>날씨 요약 · 행사/축제</li><li>도시별 맛집 추천 (카카오맵 링크)</li><li>도시별 1일 일정 (오전/오후/저녁)</li><li><span class="mark fx" data-dl="2.6">오류 요약</span></li></ul>
+      </div>
+      <div class="card rv" style="margin-top:18px"><h3>기술 스택</h3>
+        <div class="techs"><span class="tech">Python 3.10+</span><span class="tech">google-genai</span><span class="tech">requests</span><span class="tech">python-dotenv</span><span class="tech">argparse</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="thanks rv" data-dl="2.9"><b>감사합니다</b><a href="https://github.com/geunwa/travel_project" target="_blank" rel="noopener">github.com/geunwa/travel_project</a></div>
+  <template class="note">
+    <p><span class="tm">약 25초</span></p>
+    <ul><li>JSON 구조: date_text / recommendation / restaurants_by_city / errors. 오류가 없으면 errors는 빈 리스트이고, 401 샘플에는 AUTH_ERROR가 기록됩니다.</li>
+    <li>Markdown 리포트에 들어가는 항목과 오류 요약 섹션.</li>
+    <li><b>쉽게 말하면</b>: JSON은 프로그램이 다시 읽기 위한 원본 데이터, Markdown(.md)은 사람이 읽는 리포트입니다. errors가 빈 칸 []이면 오류가 없었다는 뜻입니다.</li>
+    <li>기술 스택 → 감사 인사 → GitHub 링크.</li>
+    <li>질문을 받으면 README의 오류 대응 체크리스트, 캐시 동작 방식을 안내할 수 있습니다.</li></ul>
+    <p>시간 배분 합계 약 6분: 20 · 35 · 40 · 35 · 35 · 25 · 30 · 70 · 50 · 25초</p>
+  </template>
+</section>
+
+<!-- ================= 하단 내비게이션 ================= -->
+<div id="bar"><i></i></div>
+<div id="nav">
+  <button class="navbtn" id="prev" type="button" aria-label="이전 슬라이드">←</button>
+  <div id="pg">1 <em>/ 10</em></div>
+  <button class="navbtn" id="next" type="button" aria-label="다음 슬라이드">→</button>
+  <div id="ttl"></div>
+  <div id="hintbar"><kbd>←</kbd> <kbd>→</kbd> 이동 · <kbd>C</kbd>/<kbd>1</kbd>/<kbd>2</kbd> 복사 · <kbd>G</kbd> 용어 · <kbd>S</kbd> 메모 · <kbd>F</kbd> 전체화면</div>
+</div>
+
+<div id="notes"><div class="nh"><b>발표자 메모</b><span id="timer">00:00</span></div><div id="nbody"></div></div>
+<div id="gloss"><div class="nh"><b>용어 사전</b><span>G 또는 Esc로 닫기</span></div><div class="gcols"><table>
+<tr><td>API</td><td>다른 서비스에 일을 부탁하는 정해진 창구. 이 과제는 Gemini(글 생성)와 카카오(장소 검색)에 부탁</td></tr>
+<tr><td>REST API</td><td>인터넷 주소(URL)로 요청을 보내고 답을 받는 방식의 API</td></tr>
+<tr><td>요청 / 응답</td><td>내가 보내는 질문 / 서비스가 돌려주는 답</td></tr>
+<tr><td>GET</td><td>&quot;조회해 줘&quot; 요청. 검색어를 주소 뒤에 붙여 보냄 (카카오 맛집 검색)</td></tr>
+<tr><td>POST</td><td>&quot;만들어 줘&quot; 요청. 긴 내용을 따로 담아 보냄 (Gemini에 프롬프트 전달)</td></tr>
+<tr><td>LLM</td><td>글을 이해하고 만들어 내는 AI. 여기서는 Gemini</td></tr>
+<tr><td>프롬프트</td><td>AI에게 주는 지시문</td></tr>
+<tr><td>JSON</td><td>데이터를 &quot;이름&quot;: 값 형태로 정리한 글 형식. 프로그램이 읽기 쉬움</td></tr>
+<tr><td>파싱</td><td>AI가 준 글에서 JSON을 꺼내 프로그램이 쓸 수 있게 바꾸는 일</td></tr>
+<tr><td>스키마</td><td>JSON에 반드시 있어야 할 항목과 형태를 정한 약속</td></tr>
+<tr><td>CLI</td><td>마우스 없이 터미널에 명령어를 입력해 실행하는 방식</td></tr>
+</table><table>
+<tr><td>argparse</td><td>명령어 뒤에 붙인 --date 같은 값을 읽어 주는 Python 기능</td></tr>
+<tr><td>API 키</td><td>서비스를 쓸 수 있게 해 주는 비밀번호 같은 값</td></tr>
+<tr><td>.env / 환경변수</td><td>API 키를 코드 밖에 따로 보관하는 파일 / 설정. 코드를 공유해도 키가 새지 않음</td></tr>
+<tr><td>.gitignore</td><td>GitHub에 올리지 않을 파일 목록. .env를 여기에 넣어 둠</td></tr>
+<tr><td>캐시</td><td>한 번 받은 결과를 저장해 두었다가, 같은 요청이면 다시 묻지 않고 꺼내 쓰는 것</td></tr>
+<tr><td>401 / 403</td><td>키가 틀렸거나 권한이 없음 (인증 실패)</td></tr>
+<tr><td>429</td><td>너무 많이 요청함 (사용량 한도 초과)</td></tr>
+<tr><td>5xx (예: 503)</td><td>서비스 쪽 일시 장애나 과부하</td></tr>
+<tr><td>재시도</td><td>실패하면 한 번 더 시도하는 것. 이 과제는 최대 1회</td></tr>
+<tr><td>정규화</td><td>&quot;부산광역시&quot;처럼 다양한 표기를 검색하기 좋은 &quot;부산&quot;으로 맞추는 일</td></tr>
+<tr><td>인터페이스</td><td>부품을 바꿔 끼울 수 있게 정해 둔 연결 규격. 카카오 대신 네이버로 바꿀 때 사용</td></tr>
+</table></div></div>
+</div>
+
+<script>
+(function(){
+  var stage=document.getElementById('stage');
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var cur=0, runId=0, startTs=null, copiedTimer=null;
+  var prevBtn=document.getElementById('prev'), nextBtn=document.getElementById('next');
+  var pg=document.getElementById('pg'), ttl=document.getElementById('ttl'), barI=document.querySelector('#bar i');
+  var notes=document.getElementById('notes'), nbody=document.getElementById('nbody'), timerEl=document.getElementById('timer');
+  var gloss=document.getElementById('gloss');
+
+  /* ---------- 화면 맞춤 ---------- */
+  function fit(){
+    var s=Math.min(window.innerWidth/1920, window.innerHeight/1080);
+    stage.style.transform='translate(-50%,-50%) scale('+s+')';
+  }
+  window.addEventListener('resize',fit); fit();
+
+  /* ---------- 동그라미 SVG 생성 ---------- */
+  function buildCircle(el){
+    var old=el.querySelector(':scope > svg'); if(old) old.remove();
+    var w=el.offsetWidth, h=el.offsetHeight; if(!w||!h) return;
+    var padX=13, padY=10, W=w+padX*2, H=h+padY*2, cx=W/2, cy=H/2;
+    var rx=w/2+padX*0.9, ry=h/2+padY*0.9, pts=[], n=72, t0=-2.55, sweep=Math.PI*2*1.07;
+    for(var i=0;i<=n;i++){
+      var f=i/n, t=t0+sweep*f, wob=1+0.025*Math.sin(f*17)+0.06*f;
+      pts.push((cx+rx*wob*Math.cos(t)).toFixed(1)+','+(cy+ry*wob*Math.sin(t)-f*5).toFixed(1));
+    }
+    var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);
+    svg.style.left=(-padX)+'px'; svg.style.top=(-padY)+'px'; svg.style.width=W+'px'; svg.style.height=H+'px';
+    svg.innerHTML='<path pathLength="1" d="M'+pts.join(' L')+'"/>';
+    el.appendChild(svg);
+  }
+  function buildAllCircles(){ [].forEach.call(document.querySelectorAll('.circle'),buildCircle); }
+
+  /* ---------- 지연 시간 설정 ---------- */
+  slides.forEach(function(s){
+    var i=0;
+    [].forEach.call(s.querySelectorAll('.rv,.stamp,.arr,.fx'),function(e){
+      if(e.dataset.dl!==undefined){ e.style.setProperty('--dl',e.dataset.dl+'s'); }
+      else if(e.classList.contains('rv') && !e.closest('.term-body')){ e.style.setProperty('--dl',(0.2+i*0.13).toFixed(2)+'s'); i++; }
+    });
+  });
+
+  /* ---------- 터미널 타이핑 준비 ---------- */
+  function wrapChars(root){
+    var walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null), nodes=[], n;
+    while((n=walker.nextNode())) nodes.push(n);
+    nodes.forEach(function(tn){
+      var frag=document.createDocumentFragment();
+      [].forEach.call(tn.textContent,function(ch){ var s=document.createElement('span'); s.className='ch'; s.textContent=ch; frag.appendChild(s); });
+      tn.parentNode.replaceChild(frag,tn);
+    });
+  }
+  [].forEach.call(document.querySelectorAll('.typed'),wrapChars);
+
+  function sleep(ms,id){ return new Promise(function(res,rej){ setTimeout(function(){ id===runId?res():rej('abort'); },ms); }); }
+  function resetTerm(t){
+    [].forEach.call(t.querySelectorAll('.ch.v'),function(c){c.classList.remove('v');});
+    [].forEach.call(t.querySelectorAll('.out'),function(o){o.classList.remove('on'); [].forEach.call(o.querySelectorAll('.fx'),function(f){f.classList.remove('go');});});
+    var cr=t.querySelector('.caret'); if(cr) cr.classList.remove('off');
+  }
+  async function runTerm(t,id){
+    resetTerm(t);
+    var chars=t.querySelectorAll('.typed .ch'), cr=t.querySelector('.caret');
+    await sleep(600,id);
+    for(var i=0;i<chars.length;i++){ chars[i].classList.add('v'); await sleep(42,id); }
+    await sleep(350,id); if(cr) cr.classList.add('off');
+    var outs=t.querySelectorAll('.out');
+    for(var j=0;j<outs.length;j++){
+      await sleep(parseInt(outs[j].dataset.wait||'450',10),id);
+      outs[j].classList.add('on');
+      [].forEach.call(outs[j].querySelectorAll('.fx'),function(f){ f.classList.add('go'); });
+    }
+  }
+  async function runTerms(slide){
+    var id=++runId, terms=[].slice.call(slide.querySelectorAll('.term'));
+    terms.forEach(resetTerm);
+    try{ for(var k=0;k<terms.length;k++){ if(!terms[k].querySelector('.typed')) continue; await runTerm(terms[k],id); await sleep(500,id); } }catch(e){}
+  }
+
+  /* ---------- 슬라이드 재생 ---------- */
+  function playSlide(s){
+    var els=[].slice.call(s.querySelectorAll('.rv,.stamp,.arr,.fx:not(.t),.route'));
+    els.forEach(function(e){e.classList.remove('go');});
+    void s.offsetWidth;
+    els.forEach(function(e){e.classList.add('go');});
+    runTerms(s);
+  }
+  function show(n){
+    if(n<0||n>=slides.length) return;
+    var first=(cur===n && !slides[n].classList.contains('active'));
+    cur=n;
+    slides.forEach(function(s,i){ s.classList.toggle('active',i===n); s.classList.toggle('past',i<n); });
+    pg.innerHTML=(n+1)+' <em>/ '+slides.length+'</em>';
+    ttl.textContent=slides[n].dataset.title||'';
+    barI.style.width=((n+1)/slides.length*100)+'%';
+    prevBtn.disabled=(n===0); nextBtn.disabled=(n===slides.length-1);
+    if(n>0 && startTs===null) startTs=Date.now();
+    playSlide(slides[n]);
+    renderNotes();
+    try{ history.replaceState(null,'','#'+(n+1)); }catch(e){}
+  }
+  function next(){ show(cur+1); } function prev(){ show(cur-1); }
+
+  /* ---------- 발표자 메모 + 타이머 ---------- */
+  function renderNotes(){
+    var t=slides[cur].querySelector('template.note');
+    nbody.innerHTML=t?t.innerHTML:'';
+  }
+  function tick(){
+    if(startTs===null){ timerEl.textContent='00:00'; return; }
+    var sec=Math.floor((Date.now()-startTs)/1000), m=('0'+Math.floor(sec/60)).slice(-2), s=('0'+(sec%60)).slice(-2);
+    timerEl.textContent=m+':'+s;
+  }
+  setInterval(tick,500);
+
+  /* ---------- 복사 ---------- */
+  function fallbackCopy(text){
+    var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){} document.body.removeChild(ta);
+  }
+  function copyCmd(box){
+    var text=box.dataset.copy, btn=box.querySelector('.copybtn');
+    var done=function(){ btn.classList.add('ok'); btn.textContent='복사됨 ✓'; clearTimeout(btn._t); btn._t=setTimeout(function(){btn.classList.remove('ok'); btn.textContent='복사';},1700); };
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done,function(){fallbackCopy(text);done();}); }
+    else{ fallbackCopy(text); done(); }
+  }
+  [].forEach.call(document.querySelectorAll('.cmd'),function(box){
+    box.querySelector('.copybtn').addEventListener('click',function(e){ e.stopPropagation(); copyCmd(box); });
+  });
+  [].forEach.call(document.querySelectorAll('.replay'),function(b){
+    b.addEventListener('click',function(){ runTerms(slides[cur]); });
+  });
+  function copyByIndex(i){ var boxes=slides[cur].querySelectorAll('.cmd'); if(boxes[i]) copyCmd(boxes[i]); }
+
+  /* ---------- 입력 ---------- */
+  prevBtn.addEventListener('click',prev); nextBtn.addEventListener('click',next);
+  document.addEventListener('keydown',function(e){
+    if(e.ctrlKey||e.metaKey||e.altKey) return;
+    switch(e.key){
+      case 'ArrowRight': case 'PageDown': case ' ': e.preventDefault(); next(); break;
+      case 'ArrowLeft': case 'PageUp': e.preventDefault(); prev(); break;
+      case 'Home': show(0); break;
+      case 'End': show(slides.length-1); break;
+      case 's': case 'S': notes.classList.toggle('show'); break;
+      case 'Escape': notes.classList.remove('show'); gloss.classList.remove('show'); break;
+      case 'g': case 'G': gloss.classList.toggle('show'); break;
+      case 'c': case 'C': case '1': copyByIndex(0); break;
+      case '2': copyByIndex(1); break;
+      case 't': case 'T': startTs=null; tick(); break;
+      case 'f': case 'F':
+        if(!document.fullscreenElement){ (document.documentElement.requestFullscreen||function(){}).call(document.documentElement); }
+        else{ document.exitFullscreen(); }
+        break;
+    }
+  });
+
+  /* ---------- 시작 ---------- */
+  var startAt=parseInt((location.hash||'').replace('#',''),10);
+  var ready=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();
+  buildAllCircles();
+  show(0);
+  ready.then(function(){ buildAllCircles(); });
+  window.addEventListener('load',function(){ buildAllCircles(); if(startAt>=2&&startAt<=slides.length){ show(startAt-1); } });
+})();
+</script>
+</body>
+</html>
